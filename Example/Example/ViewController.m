@@ -32,7 +32,7 @@
     ];
     self.count = self.imageURLs.count;
     
-    self.pageView.isLoopable = YES;
+    self.pageView.isLooped = YES;
     // self.pageView.autoPagingInterval = 5.0;
     
     self.pageView.delegate = self;
@@ -71,7 +71,7 @@
 }
 
 - (IBAction)loopableSwitchAction:(UISwitch *)sender {
-    self.pageView.isLoopable = sender.isOn;
+    self.pageView.isLooped = sender.isOn;
 }
 
 - (IBAction)autoPagingSwitchAction:(UISwitch *)sender {

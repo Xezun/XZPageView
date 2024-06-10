@@ -58,10 +58,10 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 
 @property (nonatomic, strong, readonly) UIScrollView *scrollView;
 
-/// 是否循环。默认 YES 。
+/// 是否为循环模式。默认 YES 。
 /// @discussion 循环模式下，不管在任何位置都可以向前或者向后翻页。
 /// @discussion 在最大页向后翻页会到第一页，在第一页向前翻页则会到最后一页。
-@property (nonatomic, setter=setLoopable:) BOOL isLoopable;
+@property (nonatomic, setter=setLooped:) BOOL isLooped;
 
 /// 弹簧效果，默认 NO 关闭弹簧效果。
 /// @discussion 只有在单页时才有效果。
@@ -84,9 +84,9 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 ///     [self.pageView setCurrentPage:3 animated:YES];
 /// }];
 /// @endcode
-/// @param currentIndex 待展示的视图的索引
+/// @param currentPage 待展示的视图的索引
 /// @param animated 是否动画
-- (void)setCurrentPage:(NSInteger)currentIndex animated:(BOOL)animated;
+- (void)setCurrentPage:(NSInteger)currentPage animated:(BOOL)animated;
 
 /// 事件代理。
 @property (nonatomic, weak) id<XZPageViewDelegate> delegate;
@@ -111,6 +111,10 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate NS_REQUIRES_SUPER;
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 
+@end
+
+@interface XZPageView (XZPageViewDeprecated)
+@property (nonatomic, getter=isLooped, setter=setLooped:) BOOL isLoopable API_DEPRECATED_WITH_REPLACEMENT("isLooped", ios(1.0, 1.0), watchos(1.0, 1.0), tvos(1.0, 1.0));
 @end
 
 NS_ASSUME_NONNULL_END
