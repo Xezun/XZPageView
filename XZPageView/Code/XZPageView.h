@@ -91,11 +91,12 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 /// 事件代理。
 @property (nonatomic, weak) id<XZPageViewDelegate> delegate;
 /// 数据源。
+/// @discussion 设置数据源立即调用 `-reloadData` 方法。
 @property (nonatomic, weak) id<XZPageViewDataSource> dataSource;
 
 /// 重新加载。
-/// @note 会保持尽量当前的 currentPage 但不会超过最大页数。
-/// @note 自动翻页计时会重置。
+/// @discussion 会保持尽量当前的 currentPage 但不会超过最大页数。
+/// @discussion 自动翻页计时会重置。
 - (void)reloadData;
 
 /// 自动翻到下一页的时间间隔，单位秒，不包括翻页动画时长。

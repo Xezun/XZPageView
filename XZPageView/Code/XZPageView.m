@@ -15,7 +15,7 @@ NSTimeInterval const XZPageViewAnimationDuration = 0.35;
 /// @param increases YES自增，NO自减
 /// @param max 最大值
 /// @param isLooped 循环模式
-static NSInteger XZLoopIndex(NSInteger index, BOOL increases, NSInteger max, BOOL isLooped) {
+UIKIT_STATIC_INLINE NSInteger XZLoopIndex(NSInteger index, BOOL increases, NSInteger max, BOOL isLooped) {
     if (isLooped) {
         return (increases ? ((index >= max) ? 0 : (index + 1)) : ((index <= 0) ? max : (index - 1)));
     }
@@ -23,7 +23,7 @@ static NSInteger XZLoopIndex(NSInteger index, BOOL increases, NSInteger max, BOO
 }
 
 /// 判断 from => to 变化的应该执行的滚动方向，YES正向，NO反向。
-static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL isLooped) {
+UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL isLooped) {
     return (isLooped ? (from < to || (from == max && to == 0)) : (from < to));
 }
 
@@ -61,7 +61,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        [self _didInitialize];
+        [self _xz_didInitialize];
     }
     return self;
 }
@@ -69,7 +69,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 - (instancetype)initWithCoder:(NSCoder *)coder {
     self = [super initWithCoder:coder];
     if (self) {
-        [self _didInitialize];
+        [self _xz_didInitialize];
     }
     return self;
 }
@@ -78,13 +78,8 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 
 - (void)didMoveToWindow {
     [super didMoveToWindow];
-    
-    // 添加到 window 时，尝试自动刷新下。
-    if (_currentPage >= _numberOfPages && self.window != nil) {
-        [self reloadData];
-    } else {
-        [self _scheduleAutoPagingTimer];
-    }
+    // 开启自动计时器
+    [self _xz_scheduleAutoPagingTimerIfNeeded];
 }
 
 - (void)layoutSubviews {
@@ -94,12 +89,12 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     
     // 布局子视图
     _scrollView.frame = bounds;
-    [self _layoutCurrentPageView:bounds];
-    [self _layoutReusingPageView:bounds];
+    [self _xz_layoutCurrentPageView:bounds];
+    [self _xz_layoutReusingPageView:bounds];
     
     // 重新配置 _scrollView
     _scrollView.contentSize = bounds.size;
-    [self _adjustContentInset:bounds];
+    [self _xz_adjustContentInset:bounds];
 }
 
 #pragma mark - 公开方法
@@ -115,18 +110,18 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     } else if (_currentPage >= _numberOfPages) {
         _currentPage = _numberOfPages - 1;
     }
-    [self _reloadCurrentPageView:bounds];
+    [self _xz_reloadCurrentPageView:bounds];
     
     // 重载备用视图
     _reusingPage = NSNotFound;
-    [self _reloadReusingPageView:bounds];
+    [self _xz_reloadReusingPageView:bounds];
     
     // 调整位置
     [_scrollView setContentOffset:CGPointZero animated:NO];
-    [self _adjustContentInset:bounds];
+    [self _xz_adjustContentInset:bounds];
     
     // 自动翻页
-    [self _scheduleAutoPagingTimer];
+    [self _xz_scheduleAutoPagingTimerIfNeeded];
 }
 
 - (void)setCurrentPage:(NSInteger)currentPage {
@@ -134,9 +129,9 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 }
 
 - (void)setCurrentPage:(NSInteger)currentPage animated:(BOOL)animated {
-    [self _setCurrentPage:currentPage animated:animated isLooped:NO];
+    [self _xz_setCurrentPage:currentPage animated:animated isLooped:NO];
     // 外部翻页，自动翻页重新计时
-    [self _resumeAutoPagingTimer];
+    [self _xz_resumeAutoPagingTimer];
 }
 
 - (BOOL)bounces {
@@ -150,7 +145,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 - (void)setAutoPagingInterval:(NSTimeInterval)autoPagingInterval {
     if (_autoPagingInterval != autoPagingInterval) {
         _autoPagingInterval = autoPagingInterval;
-        [self _scheduleAutoPagingTimer];
+        [self _xz_scheduleAutoPagingTimerIfNeeded];
     }
 }
 
@@ -167,19 +162,26 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
         NSInteger const maxPage = _numberOfPages - 1;
         if (_currentPage == 0 || _currentPage == maxPage) {
             CGRect const bounds = self.bounds;
-            [self _adjustContentInset:bounds];
+            [self _xz_adjustContentInset:bounds];
             if (_reusingPage != NSNotFound) {
                 _reusingPageDirection = XZScrollDirection(_currentPage, _reusingPage, maxPage, _isLooped);
-                [self _layoutReusingPageView:bounds];
+                [self _xz_layoutReusingPageView:bounds];
             }
         }
+    }
+}
+
+- (void)setDataSource:(id<XZPageViewDataSource>)dataSource {
+    if (_dataSource != dataSource) {
+        _dataSource = dataSource;
+        [self reloadData];
     }
 }
 
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    [self _scrollViewDidScroll:scrollView willStopScrolling:NO];
+    [self _xz_scrollViewDidScroll:scrollView willStopScrolling:NO];
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
@@ -188,7 +190,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     }
     
     // 用户操作，暂停计时器
-    [self _holdOnAutoPagingTimer];
+    [self _xz_holdOnAutoPagingTimer];
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
@@ -197,23 +199,23 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     }
     
     // 用户停止操作，恢复计时器
-    [self _resumeAutoPagingTimer];
+    [self _xz_resumeAutoPagingTimer];
     
     // 检查翻页：用户停止操作，滚动也停止了
     if (!decelerate) {
-        [self _scrollViewDidScroll:scrollView willStopScrolling:YES];
+        [self _xz_scrollViewDidScroll:scrollView willStopScrolling:YES];
     }
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    [self _scrollViewDidScroll:scrollView willStopScrolling:YES];
+    [self _xz_scrollViewDidScroll:scrollView willStopScrolling:YES];
 }
 
 #pragma mark - Timer Action
 
 - (void)_autoPagingTimerAction:(NSTimer *)timer {
     NSInteger const newPage = XZLoopIndex(_currentPage, YES, _numberOfPages - 1, YES);
-    [self _setCurrentPage:newPage animated:YES isLooped:_isLooped];
+    [self _xz_setCurrentPage:newPage animated:YES isLooped:_isLooped];
 
     // 自动翻页，发送事件
     [self.delegate pageView:self didPageToIndex:_currentPage];
@@ -221,20 +223,20 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 
 #pragma mark - 私有方法
 
-- (void)_didInitialize {
+- (void)_xz_didInitialize {
     CGRect const bounds = self.bounds;
     
-    _isLooped    = YES;
+    _isLooped      = YES;
     _currentPage   = 0;
     _reusingPage   = NSNotFound;
     _numberOfPages = 0;
     
     _scrollView = [[UIScrollView alloc] initWithFrame:bounds];
-    _scrollView.contentSize   = bounds.size;
-    _scrollView.contentInset  = UIEdgeInsetsZero;
-    _scrollView.pagingEnabled = YES;
-    _scrollView.alwaysBounceVertical   = NO;
-    _scrollView.alwaysBounceHorizontal = NO;
+    _scrollView.contentSize                    = bounds.size;
+    _scrollView.contentInset                   = UIEdgeInsetsZero;
+    _scrollView.pagingEnabled                  = YES;
+    _scrollView.alwaysBounceVertical           = NO;
+    _scrollView.alwaysBounceHorizontal         = NO;
     _scrollView.showsVerticalScrollIndicator   = NO;
     _scrollView.showsHorizontalScrollIndicator = NO;
     if (@available(iOS 11.0, *)) {
@@ -247,7 +249,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     _scrollView.delegate = self;
 }
 
-- (void)_scrollViewDidScroll:(UIScrollView *)scrollView willStopScrolling:(BOOL)willStopScrolling {
+- (void)_xz_scrollViewDidScroll:(UIScrollView *)scrollView willStopScrolling:(BOOL)willStopScrolling {
     if (scrollView != _scrollView || _numberOfPages <= 1) {
         return;
     }
@@ -272,16 +274,16 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     if (_reusingPage != pendingPage) {
         _reusingPage = pendingPage;
         _reusingPageDirection = direction;
-        [self _reloadReusingPageView:bounds];
+        [self _xz_reloadReusingPageView:bounds];
     } else if (direction != _reusingPageDirection) {
         _reusingPageDirection = direction;
-        [self _layoutReusingPageView:bounds];
+        [self _xz_layoutReusingPageView:bounds];
     }
     
     // 滚动满足一页
     if (bounds.origin.x <= -bounds.size.width || bounds.origin.x >= +bounds.size.width) {
         // 执行翻页
-        [self _didScrollToReusingPage:bounds maxPage:maxPage direction:direction];
+        [self _xz_didScrollToReusingPage:bounds maxPage:maxPage direction:direction];
         // 恢复翻页前的展示位置
         CGFloat const x = fmod(bounds.origin.x, bounds.size.width);
         _scrollView.contentOffset = CGPointMake(x, 0);
@@ -319,7 +321,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     }
     
     // 滚动停止，滚动过半，翻页
-    [self _didScrollToReusingPage:bounds maxPage:maxPage direction:direction];
+    [self _xz_didScrollToReusingPage:bounds maxPage:maxPage direction:direction];
     
     _scrollView.delegate = nil;
     if (isLTR) {
@@ -338,23 +340,23 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     [self.delegate pageView:self didPageToIndex:_currentPage];
 }
 
-- (void)_didScrollToReusingPage:(CGRect const)bounds maxPage:(NSInteger const)maxPage direction:(BOOL const)direction {
+- (void)_xz_didScrollToReusingPage:(CGRect const)bounds maxPage:(NSInteger const)maxPage direction:(BOOL const)direction {
     XZExchangeValue(_currentPage, _reusingPage);
     XZExchangeValue(_currentPageView, _reusingPageView);
     
-    [self _layoutCurrentPageView:bounds];
+    [self _xz_layoutCurrentPageView:bounds];
     _reusingPageDirection = !direction;
-    [self _layoutReusingPageView:bounds];
+    [self _xz_layoutReusingPageView:bounds];
     
     // 调整 contentInset
     if (_isLooped) {
         // 循环模式不需要调整 contentInset
     } else if (_currentPage == 0 || _currentPage == maxPage || _reusingPage == 0 || _reusingPage == maxPage) {
-        [self _adjustContentInset:bounds];
+        [self _xz_adjustContentInset:bounds];
     }
 }
 
-- (void)_reloadCurrentPageView:(CGRect const)bounds {
+- (void)_xz_reloadCurrentPageView:(CGRect const)bounds {
     [_currentPageView removeFromSuperview];
     
     if (_currentPage >= _numberOfPages) {
@@ -367,14 +369,14 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     _currentPageView = [self.dataSource pageView:self viewForPageAtIndex:_currentPage reusingView:_currentPageView];
     [_scrollView addSubview:_currentPageView];
     
-    [self _layoutCurrentPageView:bounds];
+    [self _xz_layoutCurrentPageView:bounds];
 }
 
-- (void)_layoutCurrentPageView:(CGRect const)bounds {
+- (void)_xz_layoutCurrentPageView:(CGRect const)bounds {
     _currentPageView.frame = CGRectMake(0, 0, bounds.size.width, bounds.size.height);
 }
 
-- (void)_reloadReusingPageView:(CGRect const)bounds {
+- (void)_xz_reloadReusingPageView:(CGRect const)bounds {
     [_reusingPageView removeFromSuperview];
     
     if (_reusingPage == NSNotFound) {
@@ -387,10 +389,10 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
     _reusingPageView = [self.dataSource pageView:self viewForPageAtIndex:_reusingPage reusingView:_reusingPageView];
     [_scrollView addSubview:_reusingPageView];
     
-    [self _layoutReusingPageView:bounds];
+    [self _xz_layoutReusingPageView:bounds];
 }
 
-- (void)_layoutReusingPageView:(CGRect const)bounds {
+- (void)_xz_layoutReusingPageView:(CGRect const)bounds {
     switch (self.effectiveUserInterfaceLayoutDirection) {
         case UIUserInterfaceLayoutDirectionRightToLeft: {
             CGFloat const x = (_reusingPageDirection ? -bounds.size.width : +bounds.size.width);
@@ -411,7 +413,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 /// @discussion 1、若不满足启动条件，则销毁当前计时器；
 /// @discussion 2、满足条件，若计时器已开始，则重置当前开始计时；
 /// @discussion 3、满足条件，若计时器没创建，则自动创建。
-- (void)_scheduleAutoPagingTimer {
+- (void)_xz_scheduleAutoPagingTimerIfNeeded {
     if (_numberOfPages <= 1 || self.window == nil || _autoPagingInterval <= 0) {
         // 不满足计时器启动条件，销毁当前计时器。
         [_autoPagingTimer invalidate];
@@ -428,27 +430,27 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 }
 
 /// 暂停计时
-- (void)_holdOnAutoPagingTimer {
+- (void)_xz_holdOnAutoPagingTimer {
     if (_autoPagingTimer != nil) {
         _autoPagingTimer.fireDate = NSDate.distantFuture;
     }
 }
 
 /// 重新开始计时。
-- (void)_resumeAutoPagingTimer {
+- (void)_xz_resumeAutoPagingTimer {
     if (_autoPagingTimer != nil) {
         _autoPagingTimer.fireDate = [NSDate dateWithTimeIntervalSinceNow:_autoPagingInterval];
     }
 }
 
 /// 本方法不发送事件。
-- (void)_setCurrentPage:(NSInteger)newPage animated:(BOOL)animated isLooped:(BOOL const)isLooped {
+- (void)_xz_setCurrentPage:(NSInteger)newPage animated:(BOOL)animated isLooped:(BOOL const)isLooped {
     NSParameterAssert(newPage >= 0 && newPage < _numberOfPages);
     if (_currentPage == newPage) {
         return;
     }
     
-    CGRect const bounds  = self.bounds;
+    CGRect    const bounds  = self.bounds;
     NSInteger const maxPage = _numberOfPages - 1;
     
     // 不需要动画的话，直接重新加载当前页视图即可，预加载页会在滚动时判断。
@@ -459,7 +461,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
             // 将 reusingPage 加载为 newPage
             if (_reusingPage != newPage) {
                 _reusingPage = newPage;
-                [self _reloadReusingPageView:bounds];
+                [self _xz_reloadReusingPageView:bounds];
             }
             
             // 将 currentPage 与 reusingPage 交换
@@ -467,10 +469,10 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
             XZExchangeValue(_currentPageView, _reusingPageView);
             
             // 布局视图：变量交换后，currentPage 到 reusingPage 滚动关系，与原来相反。
-            [self _layoutCurrentPageView:bounds];
+            [self _xz_layoutCurrentPageView:bounds];
             // 在循环模式下，在首尾时，A => B 的方向与 B => A 不同，因此使用原方向取反。
             _reusingPageDirection = !XZScrollDirection(_reusingPage, _currentPage, maxPage, isLooped);
-            [self _layoutReusingPageView:bounds];
+            [self _xz_layoutReusingPageView:bounds];
             
             // 修改 bounds 不会触发 -scrollViewDidScroll: 方法，但是会触发 -layoutSubviews 方法。
             
@@ -478,7 +480,7 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
             if (_isLooped) {
                 // 循环模式，不需要调整边距
             } else if (_currentPage == 0 || _currentPage == maxPage || _reusingPage == 0 || _reusingPage == maxPage) {
-                [self _adjustContentInset:bounds];
+                [self _xz_adjustContentInset:bounds];
             }
             // 将视图滚动到 reusingPage 上，即交换前的 currentPage 上，这样看起来，位置没变。
             switch (self.effectiveUserInterfaceLayoutDirection) {
@@ -507,24 +509,24 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
         }];
     } else {
         _currentPage = newPage;
-        [self _reloadCurrentPageView:bounds];
+        [self _xz_reloadCurrentPageView:bounds];
         
         if (_reusingPage != NSNotFound) {
             _reusingPageDirection = XZScrollDirection(_currentPage, _reusingPage, maxPage, _isLooped);
-            [self _layoutReusingPageView:bounds];
+            [self _xz_layoutReusingPageView:bounds];
         }
         
         if (_isLooped) {
             // 循环模式，不需要调整边距
         } else if (_currentPage == 0 || _currentPage == maxPage) {
-            [self _adjustContentInset:bounds];
+            [self _xz_adjustContentInset:bounds];
         }
     }
 }
 
 /// 调整 contentInset 以适配 currentPage 和 isLooped 状态。
 /// @note 仅在需要调整 contentInset 的地方调用此方法。
-- (void)_adjustContentInset:(CGRect const)bounds {
+- (void)_xz_adjustContentInset:(CGRect const)bounds {
     id const delegate = _scrollView.delegate;
     _scrollView.delegate = nil;
     if (_numberOfPages <= 1) {
@@ -568,7 +570,5 @@ static BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL 
 
 
 @implementation XZPageView (XZPageViewDeprecated)
-
 @dynamic isLoopable;
-
 @end
