@@ -61,7 +61,7 @@
     return reusingView;
 }
 
-- (void)pageView:(XZPageView *)pageView didPageToIndex:(NSInteger)index {
+- (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index {
     NSLog(@"didPageToIndex: %ld", index);
     self.pageControl.currentPage = index;
 }
