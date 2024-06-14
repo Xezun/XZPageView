@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'XZPageView'
-  s.version          = '1.1.0'
+  s.version          = '1.1.1'
   s.summary          = 'XZPageView 是一款管理分页视图高效组件'
 
 # This description is used to generate tags and improve search results.
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-                       组件 XZPageView 的分页，支持使用自定义视图，支持自动轮播，支持循环轮播。
+                       组件 XZPageView 的分页，支持使用自定义视图，支持自动轮播、循环轮播。
                        DESC
 
   s.homepage         = 'https://github.com/Xezun/XZPageView'
