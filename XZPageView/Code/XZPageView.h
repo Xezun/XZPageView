@@ -14,6 +14,8 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 
 @class XZPageView;
 
+@protocol UITableViewDataSource;
+
 /// XZPageView 数据源。
 @protocol XZPageViewDataSource <NSObject>
 
@@ -23,18 +25,16 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 - (NSInteger)numberOfPagesInPageView:(XZPageView *)pageView;
 
 /// 加载视图。在此方法中创建或重用页面视图，配置并返回它们。
-/// @discussion 在页面切换过程中，被切换掉的视图会保留在 XZPageView 中作为备用视图：
-/// @discussion 1、切回原来的视图时，就不需要再次该视图。
-/// @discussion 2、切换到其它视图时，该视图将作为 reusingView 加载目标视图。
+/// @discussion 在页面切换过程中，不展示视图不会立即移除，而是保留为备用视图：
+/// @discussion 1、切回备用视图，不需要重新加载。
+/// @discussion 2、切换新视图时，备用视图将作为 reusingView 参数提供给 dataSource 复用。
 /// @param pageView 调用此方法的对象
-/// @param index 元素的索引
+/// @param index 元素次序
 /// @param reusingView 可重用的视图
 - (UIView *)pageView:(XZPageView *)pageView viewForPageAtIndex:(NSInteger)index reusingView:(nullable __kindof UIView *)reusingView;
-
-/// 重置视图以备重用。
-/// @discussion 当 XZPageView 不确定是否能够重用时，将调用此方法。
-/// @discussion 比如，当方法 reloadData 被调用时，当前视图及备用视图，可能都无法重用，因此 XZPageView 将调用此方法，并将返回的视图缓存以备重用。
-/// @discussion 直接重用的视图，不会调用的方法。
+                                    
+/// 当视图不再展示时，此方法会被调用，此方法返回的视图将会被缓存，并在需要时重用。
+/// @discussion 如果有待展示的内容，视图会直接在 `pageView:viewForPageAtIndex:reusingView:` 方法中作为 reusingView 使用，而不会调用此方法。
 /// @param pageView 调用此方法的对象
 /// @param reusingView 需要被重置的视图
 - (nullable UIView *)pageView:(XZPageView *)pageView prepareForReusingView:(__kindof UIView *)reusingView;
@@ -49,7 +49,7 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 /// @discussion 只有用户操作或者自动翻页会触发此代理方法。
 /// @param pageView 调用此方法的对象
 /// @param index 被展示元素的索引，不会是 NSNotFound
-- (void)pageView:(XZPageView *)pageView didPageToIndex:(NSInteger)index;
+- (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index;
 
 @end
 
@@ -58,10 +58,10 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 
 @property (nonatomic, strong, readonly) UIScrollView *scrollView;
 
-/// 是否循环。默认 YES 。
+/// 是否为循环模式。默认 YES 。
 /// @discussion 循环模式下，不管在任何位置都可以向前或者向后翻页。
 /// @discussion 在最大页向后翻页会到第一页，在第一页向前翻页则会到最后一页。
-@property (nonatomic, setter=setLoopable:) BOOL isLoopable;
+@property (nonatomic, setter=setLooped:) BOOL isLooped;
 
 /// 弹簧效果，默认 NO 关闭弹簧效果。
 /// @discussion 只有在单页时才有效果。
@@ -84,18 +84,19 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 ///     [self.pageView setCurrentPage:3 animated:YES];
 /// }];
 /// @endcode
-/// @param currentIndex 待展示的视图的索引
+/// @param currentPage 待展示的视图的索引
 /// @param animated 是否动画
-- (void)setCurrentPage:(NSInteger)currentIndex animated:(BOOL)animated;
+- (void)setCurrentPage:(NSInteger)currentPage animated:(BOOL)animated;
 
 /// 事件代理。
 @property (nonatomic, weak) id<XZPageViewDelegate> delegate;
 /// 数据源。
+/// @discussion 设置数据源立即调用 `-reloadData` 方法。
 @property (nonatomic, weak) id<XZPageViewDataSource> dataSource;
 
 /// 重新加载。
-/// @note 会保持尽量当前的 currentPage 但不会超过最大页数。
-/// @note 自动翻页计时会重置。
+/// @discussion 会保持尽量当前的 currentPage 但不会超过最大页数。
+/// @discussion 自动翻页计时会重置。
 - (void)reloadData;
 
 /// 自动翻到下一页的时间间隔，单位秒，不包括翻页动画时长。
@@ -111,6 +112,10 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate NS_REQUIRES_SUPER;
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 
+@end
+
+@interface XZPageView (XZPageViewDeprecated)
+@property (nonatomic, getter=isLooped, setter=setLooped:) BOOL isLoopable API_DEPRECATED_WITH_REPLACEMENT("isLooped", ios(1.0, 1.0), watchos(1.0, 1.0), tvos(1.0, 1.0));
 @end
 
 NS_ASSUME_NONNULL_END
