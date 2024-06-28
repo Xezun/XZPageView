@@ -31,10 +31,10 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 #define XZExchangeValue(var_1, var_2) { typeof(var_1) temp = var_1; var_1 = var_2; var_2 = temp; }
 
 @interface XZPageScrollView : UIScrollView
-
-- (void)setDelegate:(id<UIScrollViewDelegate>)delegate NS_UNAVAILABLE;
-- (void)_xz_setDelegate:(id<UIScrollViewDelegate>)delegate;
-
+- (instancetype)initWithFrame:(CGRect)frame pageView:(XZPageView *)pageView NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
+- (instancetype)initWithCoder:(NSCoder *)coder NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 @end
 
 
@@ -253,7 +253,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     _reusingPage   = NSNotFound;
     _numberOfPages = 0;
     
-    _scrollView = [[XZPageScrollView alloc] initWithFrame:bounds];
+    _scrollView = [[XZPageScrollView alloc] initWithFrame:bounds pageView:self];
     _scrollView.contentSize                    = bounds.size;
     _scrollView.contentInset                   = UIEdgeInsetsZero;
     _scrollView.pagingEnabled                  = YES;
@@ -268,7 +268,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     }
     [self addSubview:_scrollView];
     
-    [_scrollView _xz_setDelegate:self];
+    [_scrollView setDelegate:self];
 }
 
 - (void)_xz_scrollViewDidScroll:(UIScrollView *)scrollView isScrollingStopped:(BOOL)isScrollingStopped {
@@ -347,7 +347,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     // 滚动停止，滚动过半，翻页
     [self _xz_didScrollToReusingPage:bounds maxPage:maxPage direction:direction];
     
-    [_scrollView _xz_setDelegate:nil];
+    [_scrollView setDelegate:nil];
     if (isLTR) {
         CGFloat const x = bounds.origin.x + (direction ? (-bounds.size.width) : (+bounds.size.width));
         [_scrollView setContentOffset:CGPointMake(x, 0) animated:NO];
@@ -355,7 +355,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
         CGFloat const x = bounds.origin.x + (direction ? (+bounds.size.width) : (-bounds.size.width));
         [_scrollView setContentOffset:CGPointMake(x, 0) animated:NO];
     }
-    [_scrollView _xz_setDelegate:self];
+    [_scrollView setDelegate:self];
     
     // 动画画到目的位置。
     [_scrollView setContentOffset:CGPointZero animated:NO];
@@ -510,18 +510,18 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     if (animated) {
         // 将窗口恢复到原始视图上
         [UIView performWithoutAnimation:^{
-            [_scrollView _xz_setDelegate:nil];
+            [_scrollView setDelegate:nil];
             CGFloat const x = _reusingPageView.frame.origin.x + _scrollView.contentOffset.x;
             [_scrollView setContentOffset:CGPointMake(x, 0) animated:NO];
-            [_scrollView _xz_setDelegate:self];
+            [_scrollView setDelegate:self];
         }];
         
         // 动画到当前视图上。
         // 修改 bounds 不会触发 -scrollViewDidScroll: 方法，但是会触发 -layoutSubviews 方法。
         [UIView animateWithDuration:XZPageViewAnimationDuration animations:^{
-            [self->_scrollView _xz_setDelegate:nil];
+            [self->_scrollView setDelegate:nil];
             [self->_scrollView setContentOffset:CGPointZero animated:NO];
-            [self->_scrollView _xz_setDelegate:self];
+            [self->_scrollView setDelegate:self];
         }];
     }
 }
@@ -567,9 +567,9 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     }
     
     id const delegate = _scrollView.delegate;
-    [_scrollView _xz_setDelegate:nil];
+    [_scrollView setDelegate:nil];
     _scrollView.contentInset = newInsets;
-    [_scrollView _xz_setDelegate:delegate];
+    [_scrollView setDelegate:delegate];
 }
 
 @end
@@ -580,15 +580,21 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 @end
 
 
-@implementation XZPageScrollView
+@implementation XZPageScrollView {
+    XZPageView * __unsafe_unretained _pageView;
+}
 
-- (void)_xz_setDelegate:(id<UIScrollViewDelegate>)delegate {
-    [super setDelegate:delegate];
+- (instancetype)initWithFrame:(CGRect)frame pageView:(XZPageView *)pageView {
+    self = [super initWithFrame:frame];
+    if (self) {
+        _pageView = pageView;
+    }
+    return self;
 }
 
 - (void)setDelegate:(id<UIScrollViewDelegate>)delegate {
-    NSString *reason = [NSString stringWithFormat:@"%@ 的 delegate 已由 XZPageView 管理，外部不允许修改", self];
-    @throw [NSException exceptionWithName:NSGenericException reason:reason userInfo:nil];
+    NSAssert(delegate == nil || delegate == _pageView, @"%@ 的 delegate 已由 XZPageView 管理，外部不允许修改", self);
+    [super setDelegate:delegate];
 }
 
 @end
