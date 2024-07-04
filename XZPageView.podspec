@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'XZPageView'
-  s.version          = '1.1.2'
+  s.version          = '1.1.3'
   s.summary          = 'XZPageView 是一款管理分页视图高效组件'
 
 # This description is used to generate tags and improve search results.
