@@ -11,6 +11,8 @@ target 'Example' do
   
   pod 'XZPageControl'
   pod 'SDWebImage'
+  pod 'XZSegmentedControl'
+  
   # pod 'YYModel'
   
   target 'ExampleTests' do

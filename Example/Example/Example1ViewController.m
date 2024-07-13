@@ -1,16 +1,16 @@
 //
-//  ViewController.m
+//  Example1ViewController.m
 //  Example
 //
 //  Created by Xezun on 2023/7/27.
 //
 
-#import "ViewController.h"
+#import "Example1ViewController.h"
 @import XZPageControl;
 @import XZPageView;
 @import SDWebImage;
 
-@interface ViewController () <XZPageViewDelegate, XZPageViewDataSource>
+@interface Example1ViewController () <XZPageViewDelegate, XZPageViewDataSource>
 @property (weak, nonatomic) IBOutlet XZPageView *pageView;
 @property (weak, nonatomic) IBOutlet XZPageControl *pageControl;
 
@@ -18,7 +18,7 @@
 @property (nonatomic, copy) NSArray *imageURLs;
 @end
 
-@implementation ViewController
+@implementation Example1ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -64,6 +64,10 @@
 - (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index {
     NSLog(@"didPageToIndex: %ld", index);
     self.pageControl.currentPage = index;
+}
+
+- (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition {
+    NSLog(@"didTransitionPage: %f", transition);
 }
 
 - (void)pageControlDidChangeValue:(XZPageControl *)pageControl {
