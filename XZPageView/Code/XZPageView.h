@@ -44,12 +44,17 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 /// XZPageView 事件方法列表。
 @protocol XZPageViewDelegate <NSObject>
 
-@required
+@optional
 /// 翻页到某页时，此方法会被调用。
 /// @discussion 只有用户操作或者自动翻页会触发此代理方法。
-/// @param pageView 调用此方法的对象
+/// @param pageView 调用此方法的 XZPageView 对象
 /// @param index 被展示元素的索引，不会是 NSNotFound
 - (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index;
+
+/// 当用户翻动页面时，此方法会被调用。
+/// @param pageView 调用此方法的 XZPageView 对象。
+/// @param transition 翻动的进度
+- (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition;
 
 @end
 

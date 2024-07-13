@@ -11,7 +11,7 @@
         <!--XZPageView-->
         <scene sceneID="tne-QT-ifu">
             <objects>
-                <viewController id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
+                <viewController id="BYZ-38-t0r" customClass="Example1ViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -222,6 +222,26 @@
                                             <segue destination="BYZ-38-t0r" kind="show" id="0hr-I6-UdP"/>
                                         </connections>
                                     </tableViewCell>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" textLabel="297-MF-BYI" style="IBUITableViewCellStyleDefault" id="95O-cE-LDW">
+                                        <rect key="frame" x="0.0" y="61.666667938232422" width="393" height="43.666667938232422"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="95O-cE-LDW" id="Pu0-tl-K6M">
+                                            <rect key="frame" x="0.0" y="0.0" width="362.66666666666669" height="43.666667938232422"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="示例二" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="297-MF-BYI">
+                                                    <rect key="frame" x="20" y="0.0" width="334.66666666666669" height="43.666667938232422"/>
+                                                    <autoresizingMask key="autoresizingMask"/>
+                                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                    <nil key="textColor"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                            </subviews>
+                                        </tableViewCellContentView>
+                                        <connections>
+                                            <segue destination="61E-yT-PcE" kind="show" id="p5n-ao-gPP"/>
+                                        </connections>
+                                    </tableViewCell>
                                 </cells>
                             </tableViewSection>
                         </sections>
@@ -237,6 +257,53 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="gho-VF-OHc" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1103" y="-7"/>
+        </scene>
+        <!--示例二-->
+        <scene sceneID="ZB7-MT-aUx">
+            <objects>
+                <viewController id="61E-yT-PcE" customClass="Example2ViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="zqe-FV-Vs9">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xBt-9g-c7O" customClass="XZSegmentedControl">
+                                <rect key="frame" x="0.0" y="103" width="393" height="44"/>
+                                <color key="backgroundColor" systemColor="systemTealColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="44" id="QU9-Dp-Tno"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="direction">
+                                        <integer key="value" value="1"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Nh8-Pq-Eck" customClass="XZPageView">
+                                <rect key="frame" x="0.0" y="147" width="393" height="705"/>
+                                <color key="backgroundColor" systemColor="systemGray6Color"/>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="5wN-5M-FcC"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="Nh8-Pq-Eck" firstAttribute="leading" secondItem="5wN-5M-FcC" secondAttribute="leading" id="DhH-wl-jpI"/>
+                            <constraint firstItem="5wN-5M-FcC" firstAttribute="trailing" secondItem="xBt-9g-c7O" secondAttribute="trailing" id="Ldm-B1-SLC"/>
+                            <constraint firstItem="Nh8-Pq-Eck" firstAttribute="top" secondItem="xBt-9g-c7O" secondAttribute="bottom" id="Tcw-pY-VWL"/>
+                            <constraint firstItem="5wN-5M-FcC" firstAttribute="trailing" secondItem="Nh8-Pq-Eck" secondAttribute="trailing" id="XQn-3Q-JJh"/>
+                            <constraint firstItem="xBt-9g-c7O" firstAttribute="leading" secondItem="5wN-5M-FcC" secondAttribute="leading" id="aDo-xV-Ww5"/>
+                            <constraint firstAttribute="bottom" secondItem="Nh8-Pq-Eck" secondAttribute="bottom" id="aqV-Ag-dub"/>
+                            <constraint firstItem="xBt-9g-c7O" firstAttribute="top" secondItem="5wN-5M-FcC" secondAttribute="top" id="hRO-KL-7yc"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="示例二" id="rFF-tD-j9X"/>
+                    <connections>
+                        <outlet property="pageView" destination="Nh8-Pq-Eck" id="zbv-J2-XUW"/>
+                        <outlet property="segmentedControl" destination="xBt-9g-c7O" id="XKg-uA-4hU"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="sec-dG-wyv" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1984" y="688"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="JKL-fG-vX3">
@@ -266,6 +333,9 @@
         </systemColor>
         <systemColor name="systemGray6Color">
             <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemTealColor">
+            <color red="0.18823529411764706" green="0.69019607843137254" blue="0.7803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>
