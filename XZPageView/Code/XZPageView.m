@@ -340,9 +340,14 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
         // 恢复翻页前的展示位置
         CGFloat const x = fmod(bounds.origin.x, bounds.size.width);
         _scrollView.contentOffset = CGPointMake(x, 0);
+        
+        // 此时已经完成翻页，直接发送了 show 事件，而没有转场进度 100% 的事件。
+        // 1、即使发送进度 100% 的事件，事件也会被 show 事件所覆盖，因为这两个事件是串行的。
+        // 2、此时，新页面可能已经进入转场，旧页面应该属于退场状态。
+        
         // 用户翻页，发送代理事件
         XZCallBlock(_didShowPageAtIndex, self, _currentPage);
-        
+        // 新页的转场进度。
         XZCallBlock(_didTransitionPage, self, x, bounds.size.width, _currentPage, _reusingPage);
         return;
     }
