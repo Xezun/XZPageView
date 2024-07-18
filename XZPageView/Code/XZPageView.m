@@ -309,6 +309,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     
     // 还在原点时，不需要处理
     if (bounds.origin.x == 0) {
+        XZCallBlock(_didTransitionPage, self, 0, bounds.size.width, _currentPage, _reusingPage);
         return;
     }
     
