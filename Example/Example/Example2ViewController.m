@@ -28,7 +28,7 @@
     self.segmentedControl.backgroundColor = UIColor.whiteColor;
     self.segmentedControl.indicatorSize = CGSizeMake(20, 4.0);
     self.segmentedControl.indicatorColor = UIColor.redColor;
-    self.segmentedControl.segmentSpacing = 10;
+    self.segmentedControl.interitemSpacing = 10;
     self.segmentedControl.headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
     self.segmentedControl.footerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
     self.segmentedControl.titles = self.titles;
@@ -48,7 +48,7 @@
 }
 
 - (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition {
-    self.segmentedControl.indicatorTransition = transition;
+    self.segmentedControl.transition = transition;
 }
 
 - (NSInteger)numberOfPagesInPageView:(XZPageView *)pageView {
