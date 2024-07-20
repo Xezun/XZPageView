@@ -92,4 +92,14 @@
     self.pageView.bounces = sender.isOn;
 }
 
+- (IBAction)widthSegmentedControlValueChanged:(UISegmentedControl *)sender {
+//    UIScrollView *scrollView = self.pageView.subviews.firstObject;
+//
+//    CGFloat x = self.pageView.frame.size.width * 0.5;
+//    [scrollView setContentOffset:CGPointMake(x, 0) animated:YES];
+    CGRect frame = self.pageView.frame;
+    frame.size.width -= 0.1 * (sender.selectedSegmentIndex + 1);
+    self.pageView.frame = frame;
+}
+
 @end

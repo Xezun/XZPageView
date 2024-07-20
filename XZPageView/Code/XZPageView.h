@@ -53,7 +53,7 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 
 /// 当用户翻动页面时，此方法会被调用。
 /// @param pageView 调用此方法的 XZPageView 对象。
-/// @param transition 翻动的进度
+/// @param transition 翻动的进度，值范围为 (0, 1.0) 之间，不包括边界值。
 - (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition;
 
 @end
