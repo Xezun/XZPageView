@@ -1,6 +1,6 @@
 # XZPageView
 
-[![CI Status](https://img.shields.io/travis/xezun/XZPageView.svg?style=flat)](https://travis-ci.org/xezun/XZPageView)
+[![CI Status](https://img.shields.io/badge/Build-pass-brightgreen.svg)](https://cocoapods.org/pods/XZPageView)
 [![Version](https://img.shields.io/cocoapods/v/XZPageView.svg?style=flat)](https://cocoapods.org/pods/XZPageView)
 [![License](https://img.shields.io/cocoapods/l/XZPageView.svg?style=flat)](https://cocoapods.org/pods/XZPageView)
 [![Platform](https://img.shields.io/cocoapods/p/XZPageView.svg?style=flat)](https://cocoapods.org/pods/XZPageView)
@@ -76,7 +76,6 @@ self.pageView.autoPagingInterval = 3.0;
 ## 版本计划
 
 1. XZPageViewController
-2. 转场进度功能
 
 ## Author
 
