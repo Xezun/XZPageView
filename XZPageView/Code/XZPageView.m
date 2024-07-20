@@ -309,6 +309,9 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     
     // 还在原点时，不需要处理
     if (bounds.origin.x == 0) {
+        if (isStopped) {
+            return; // isStopped 只有在将要停止滚动的方法中才会触发，转场进度已经发送过了。
+        }
         XZCallBlock(_didTransitionPage, self, 0, bounds.size.width, _currentPage, _reusingPage);
         return;
     }
