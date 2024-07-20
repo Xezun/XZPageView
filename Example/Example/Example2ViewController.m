@@ -44,10 +44,12 @@
 }
 
 - (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index {
+    NSLog(@"didPageToIndex: %ld", index);
     [self.segmentedControl setSelectedIndex:index animated:YES];
 }
 
 - (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition {
+    NSLog(@"didTransitionPage: %f", transition);
     [self.segmentedControl updateInteractiveTransition:transition];
 }
 
