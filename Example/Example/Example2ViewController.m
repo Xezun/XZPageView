@@ -48,7 +48,7 @@
 }
 
 - (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition {
-    self.segmentedControl.transition = transition;
+    [self.segmentedControl updateInteractiveTransition:transition];
 }
 
 - (NSInteger)numberOfPagesInPageView:(XZPageView *)pageView {
