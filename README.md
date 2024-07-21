@@ -73,9 +73,18 @@ self.pageView.isLoopable = YES;
 self.pageView.autoPagingInterval = 3.0;
 ```
 
+支持转场进度。
+
+```objc
+- (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition {
+    NSLog(@"didTransitionPage: %f", transition);
+}
+```
+
 ## 版本计划
 
 1. XZPageViewController
+2. 支持垂直翻页
 
 ## Author
 

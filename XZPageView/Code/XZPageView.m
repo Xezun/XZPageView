@@ -7,6 +7,7 @@
 
 #import "XZPageView.h"
 @import ObjectiveC;
+@import XZDefines;
 
 NSTimeInterval const XZPageViewAnimationDuration = 0.35;
 
@@ -309,16 +310,16 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
         return;
     }
     
-    CGRect const bounds = _scrollView.bounds;
-    
+    CGRect  const bounds         = _scrollView.bounds;
+    CGFloat const contentOffsetX = bounds.origin.x;
     // 还在原点时，不需要处理
-    if (bounds.origin.x == 0) {
+    if (contentOffsetX == 0) {
         return;
     }
     
     BOOL      const isLTR       = (self.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionLeftToRight);
     NSInteger const maxPage     = _numberOfPages - 1;
-    BOOL      const direction   = isLTR ? bounds.origin.x > 0 : bounds.origin.x < 0;
+    BOOL      const direction   = isLTR ? contentOffsetX > 0 : contentOffsetX < 0;
     NSInteger const pendingPage = XZLoopPage(_currentPage, direction, maxPage, _isLooped);
     
     // 没有目标页面，就不需要处理加载及翻页了。
@@ -337,25 +338,22 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
         [self XZ_layoutReusingPageView:bounds];
     }
     
-    CGFloat const width = bounds.size.width;
     // @discussion
-    // 当页面宽度不是像素整数倍时，比如 370.1 点，UIScrollView 会使用 370.0 点进行翻页。
-    // 即页面停止时滚动距离不足一个页面长度，从而被认定为没有翻页，而对于用户，实际效果却已经完成了翻页。
-    // 因此对宽度进行向下取整，在页面停止滚动时，判断当前是否已经翻页。
+    // 当页面宽度不是整数时，比如 370.1 点，UIScrollView 会使用 370.0 点进行翻页，
+    // 页面停止滚动时，滚动距离不足一个页面宽度，从而被认定为没有翻页，但是对于用户来说，从视觉上来讲，却已经完成了翻页。
+    // 幸好的是，在这种情形下，由于页面位置十分接近，即使再次滚动修正位置，对实际体验也无影响。
+    // 因此，我们需要监听停止滚动的方法，并在停止滚动时，对页面状态进行检测。
     // @discussion
-    // 理论上在减速前，即-scrollViewWillEndDragging:withVelocity:targetContentOffset:方法中，
+    // 理论上在减速前，即 -scrollViewWillEndDragging:withVelocity:targetContentOffset: 方法中，
     // 检测停止时能否满足翻页效果更好，但是这个方法在 iOS 14 以下系统中存在BUG，
-    // 参数 targetContentOffset 的值，可能并非不是最终停止的位置（未进行像素取整），且在代理方法中，
-    // 需要异步调用 -setContentOffset:animated: 方法来修正位置，似乎是因为修复 targetContentOffset 的
-    // 坐标没有停止原有的减速效果。
-    // @discussion
-    // 幸好的是，在 UIScrollView 开启整页翻页效果时，scrollView 每次停止位置都是接近于页面实际宽度，
-    // 即使在停止后再次滚动修正位置，对实际体验并无影响。
-    CGFloat const scale = UIScreen.mainScreen.scale;
-    CGFloat const minPageWidth = round(bounds.size.width * scale) / scale; // 像素取整
+    // 参数 targetContentOffset 的值，可能并非不是最终停止的位置，似乎未进行像素取整。
+    // 另外，在代理方法中，修改 targetContentOffset 不会结束原有的减速效果，
+    // 而调用 -setContentOffset:animated: 方法修正位置，需要需要异步才能生效。
+    
+    CGFloat const PageWidth = bounds.size.width;
     
     // 滚动满足一页
-    if (bounds.origin.x <= -minPageWidth || bounds.origin.x >= +minPageWidth) {
+    if (contentOffsetX <= -PageWidth || contentOffsetX >= +PageWidth) {
         // 执行翻页：_currentPage 与 _reusingPage 交换
         [self XZ_didScrollToReusingPage:bounds maxPage:maxPage direction:direction];
         
@@ -366,7 +364,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
         XZCallBlock(_didShowPageAtIndex, self, _currentPage);
         
         // 恢复翻页前的展示位置，如果 x 不为零，会加载下一页，并发送转场进度
-        CGFloat const x = fmod(bounds.origin.x, minPageWidth);
+        CGFloat const x = fmod(contentOffsetX, PageWidth);
         // 不能使用 setContentOffset:animated:NO 方法，会触发 scrollViewDidEndDecelerating 代理方法
         _scrollView.contentOffset = CGPointMake(x, 0);
         return;
@@ -374,22 +372,37 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     
     // 滚动不足一页
     
-    // 发送转场进度
-    XZCallBlock(_didTransitionPage, self, bounds.origin.x, width, _currentPage, _reusingPage);
-    
     // 滚动已停止，且不足一页：检查翻页情况。
     // @discussion
     // 在某些极端情况下，可能会发生，翻页停在中间的情况。
     if (stopped) {
-        // 滚动停止，滚动未过半，不执行翻页，退回原点，否则执行翻页
-        CGFloat const halfPageWidth = width * 0.5;
-        if (bounds.origin.x >= +halfPageWidth) {
-            [_scrollView setContentOffset:CGPointMake(width, 0) animated:YES];
-        } else if (bounds.origin.x <= -halfPageWidth) {
-            [_scrollView setContentOffset:CGPointMake(-width, 0) animated:YES];
+        if (PageWidth - contentOffsetX < 1.0 || -PageWidth - contentOffsetX > -1.0) {
+            // 小于一个点，可能是因为 width 不是整数，翻页宽度与 width 不一致，认为翻页完成
+            XZLog(@"翻页修复：停止滚动，距翻页不足一个点，%@", NSStringFromCGRect(bounds));
+            [self XZ_didScrollToReusingPage:bounds maxPage:maxPage direction:direction];
+            XZCallBlock(_didShowPageAtIndex, self, _currentPage);
+            // 这里不取模，认为是正好完成翻页
+            _scrollView.contentOffset = CGPointZero;
         } else {
-            [_scrollView setContentOffset:CGPointZero animated:YES];
+            // 发送转场进度
+            XZCallBlock(_didTransitionPage, self, contentOffsetX, PageWidth, _currentPage, _reusingPage);
+            // 滚动停止，滚动未过半，不执行翻页，退回原点，否则执行翻页
+            CGFloat const halfPageWidth = PageWidth * 0.5;
+            if (contentOffsetX >= +halfPageWidth) {
+                XZLog(@"翻页修复：停止滚动，向右滚动距离超过一半，翻页，%@", NSStringFromCGRect(bounds));
+                [_scrollView setContentOffset:CGPointMake(PageWidth, 0) animated:YES];
+            } else if (contentOffsetX <= -halfPageWidth) {
+                XZLog(@"翻页修复：停止滚动，向左滚动距离超过一半，翻页，%@", NSStringFromCGRect(bounds));
+                [_scrollView setContentOffset:CGPointMake(-PageWidth, 0) animated:YES];
+            } else {
+                // 滚动未超过一半，不翻页，回到原点
+                XZLog(@"翻页修复：停止滚动，滚动距离未超过一半，不翻页，%@", NSStringFromCGRect(bounds));
+                [_scrollView setContentOffset:CGPointZero animated:YES];
+            }
         }
+    } else {
+        // 发送转场进度
+        XZCallBlock(_didTransitionPage, self, contentOffsetX, PageWidth, _currentPage, _reusingPage);
     }
 }
 
