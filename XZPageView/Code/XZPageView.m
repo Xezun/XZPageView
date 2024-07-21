@@ -293,11 +293,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     _scrollView.alwaysBounceHorizontal         = NO;
     _scrollView.showsVerticalScrollIndicator   = NO;
     _scrollView.showsHorizontalScrollIndicator = NO;
-    if (@available(iOS 11.0, *)) {
-        _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
-    } else {
-        // Fallback on earlier versions
-    }
+    _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     [self addSubview:_scrollView];
     
     [_scrollView setDelegate:self];
