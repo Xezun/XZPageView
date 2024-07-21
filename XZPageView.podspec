@@ -31,9 +31,17 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '11.0'
   s.pod_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'XZPAGEVIEW_FRAMEWORK=1' }
   
+  s.default_subspec = 'Code'
+  s.dependency 'XZDefines/XZMacro'
+  
   s.subspec 'Code' do |ss|
     ss.source_files = 'XZPageView/Code/**/*.{h,m}'
     # ss.project_header_files = 'XZPageView/Code/**/Private/*.{h,m}'
+  end
+  
+  s.subspec 'DEBUG' do |ss|
+    ss.dependency 'XZPageView/Code'
+    ss.pod_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'XZ_DEBUG=1' }
   end
   
   # s.resource_bundles = {
