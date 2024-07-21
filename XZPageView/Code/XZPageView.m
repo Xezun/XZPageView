@@ -241,12 +241,14 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
-    if (scrollView != _scrollView || _numberOfPages <= 1) {
+    if (scrollView != _scrollView) {
         return;
     }
     
     // 用户停止操作，恢复计时器
-    [self XZ_resumeAutoPagingTimer];
+    if (_numberOfPages > 1) {
+        [self XZ_resumeAutoPagingTimer];
+    }
     
     // 检查翻页：用户停止操作
     if (decelerate) {
@@ -293,11 +295,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     _scrollView.alwaysBounceHorizontal         = NO;
     _scrollView.showsVerticalScrollIndicator   = NO;
     _scrollView.showsHorizontalScrollIndicator = NO;
-    if (@available(iOS 11.0, *)) {
-        _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
-    } else {
-        // Fallback on earlier versions
-    }
+    _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     [self addSubview:_scrollView];
     
     [_scrollView setDelegate:self];
@@ -306,12 +304,20 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 /// 发生滚动
 /// @param stopped 滚动是否停止
 - (void)XZ_scrollViewDidScroll:(UIScrollView *)scrollView stopped:(BOOL)stopped {
-    if (scrollView != _scrollView || _numberOfPages <= 1) {
+    if (scrollView != _scrollView) {
         return;
     }
     
     CGRect  const bounds         = _scrollView.bounds;
     CGFloat const contentOffsetX = bounds.origin.x;
+    if (_numberOfPages <= 1) {
+        if (stopped && contentOffsetX != 0) {
+            // 只有一张图时，只有原点是合法位置
+            [_scrollView setContentOffset:CGPointZero animated:YES];
+        }
+        return;
+    }
+    
     // 还在原点时，不需要处理
     if (contentOffsetX == 0) {
         return;
@@ -324,6 +330,10 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     
     // 没有目标页面，就不需要处理加载及翻页了。
     if (pendingPage == NSNotFound) {
+        if (stopped) {
+            // 停止在非页面位置，自动归位
+            [_scrollView setContentOffset:CGPointZero animated:YES];
+        }
         return;
     }
     
