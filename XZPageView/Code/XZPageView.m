@@ -324,6 +324,10 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     
     // 没有目标页面，就不需要处理加载及翻页了。
     if (pendingPage == NSNotFound) {
+        if (stopped) {
+            // 停止在非页面位置，自动归位
+            [_scrollView setContentOffset:CGPointZero animated:YES];
+        }
         return;
     }
     
