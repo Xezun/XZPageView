@@ -11,8 +11,10 @@
 @import SDWebImage;
 
 @interface Example1ViewController () <XZPageViewDelegate, XZPageViewDataSource>
+
 @property (weak, nonatomic) IBOutlet XZPageView *pageView;
 @property (weak, nonatomic) IBOutlet XZPageControl *pageControl;
+@property (weak, nonatomic) IBOutlet UILabel *pageWidthLabel;
 
 @property (nonatomic) NSInteger count;
 @property (nonatomic, copy) NSArray *imageURLs;
@@ -42,6 +44,10 @@
     self.pageControl.indicatorFillColor = UIColor.whiteColor;
     self.pageControl.currentIndicatorFillColor = UIColor.orangeColor;
     [self.pageControl addTarget:self action:@selector(pageControlDidChangeValue:) forControlEvents:(UIControlEventValueChanged)];
+}
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
 }
 
 - (NSInteger)numberOfPagesInPageView:(XZPageView *)pageView {
@@ -93,9 +99,17 @@
 }
 
 - (IBAction)widthSegmentedControlValueChanged:(UISegmentedControl *)sender {
-    CGRect frame = self.pageView.frame;
-    frame.size.width -= 0.1 * (sender.selectedSegmentIndex + 1);
+    CGRect frame = self.pageView.superview.bounds;
+    frame.size.width -= 1;
+    frame.size.width += 0.1 * (sender.selectedSegmentIndex + 1);
     self.pageView.frame = frame;
+    self.pageWidthLabel.text = [NSString stringWithFormat:@"%.1f", frame.size.width];
+}
+ 
+- (IBAction)contentOffsetSegmentedControlValueChanged:(UISegmentedControl *)sender {
+    UIScrollView *scrollView = self.pageView.subviews.firstObject;
+    CGFloat const value = [[sender titleForSegmentAtIndex:sender.selectedSegmentIndex] floatValue];
+    [scrollView setContentOffset:CGPointMake(scrollView.frame.size.width * value, 0) animated:YES];
 }
 
 @end
