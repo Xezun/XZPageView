@@ -234,12 +234,29 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     
 }
 
-- (void)notifyDidShowPage:(nonnull Class)aClass {
+- (XZPageViewDidShowBlock)notifyDidShowPage:(nonnull Class)aClass {
+    XZShowPageFunc const didShowPageAtIndex = (XZShowPageFunc)class_getMethodImplementation(aClass, @selector(pageView:didShowPageAtIndex:));
+    if (didShowPageAtIndex == NULL) return nil;
     
+    return ^(XZPageView *self, NSInteger currentPage) {
+        id<XZPageViewDelegate> const delegate = self.delegate;
+        if (delegate == nil) return;
+        didShowPageAtIndex(delegate, @selector(pageView:didShowPageAtIndex:), self, currentPage);
+    };
 }
 
-- (void)notifyDidTransitionPage:(nonnull Class)aClass {
+- (XZPageViewDidTransitionBlock)notifyDidTransitionPage:(nonnull Class)aClass {
+    XZTransitionPageFunc const didTransitionPage = (XZTransitionPageFunc)class_getMethodImplementation(aClass, @selector(pageView:didTransitionPage:));
+    if (didTransitionPage == NULL) return nil;
     
+    return ^(XZPageView *self, CGFloat x, CGFloat width, NSInteger fromPage, NSInteger toPage) {
+        id<XZPageViewDelegate> const delegate = self.delegate;
+        if (delegate == nil) return;
+        CGFloat const transition = x / width;
+        // 一次翻多页的情况，在当前设计模式下不存在。
+        // 如果有，可以根据 transition 的正负判断翻页方向，再根据 fromPage 和 toPage 以及它们之差，计算出翻页进度。
+        didTransitionPage(delegate, @selector(pageView:didTransitionPage:), self, transition);
+    };
 }
 
 @end
@@ -577,30 +594,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     [_scrollView setDelegate:delegate];
 }
 
-- (void)notifyDidShowPage:(nonnull Class)aClass {
-    XZShowPageFunc const didShowPageAtIndex = (XZShowPageFunc)class_getMethodImplementation(aClass, @selector(pageView:didShowPageAtIndex:));
-    if (didShowPageAtIndex == NULL) return;
-    
-    _didShowPageAtIndex = ^(XZPageView *self, NSInteger currentPage) {
-        id<XZPageViewDelegate> const delegate = self.delegate;
-        if (delegate == nil) return;
-        didShowPageAtIndex(delegate, @selector(pageView:didShowPageAtIndex:), self, currentPage);
-    };
-}
 
-- (void)notifyDidTransitionPage:(nonnull Class)aClass {
-    XZTransitionPageFunc const didTransitionPage = (XZTransitionPageFunc)class_getMethodImplementation(aClass, @selector(pageView:didTransitionPage:));
-    if (didTransitionPage == NULL) return;
-    
-    _didTransitionPage = ^(XZPageView *self, CGFloat x, CGFloat width, NSInteger fromPage, NSInteger toPage) {
-        id<XZPageViewDelegate> const delegate = self.delegate;
-        if (delegate == nil) return;
-        CGFloat const transition = x / width;
-        // 一次翻多页的情况，在当前设计模式下不存在。
-        // 如果有，可以根据 transition 的正负判断翻页方向，再根据 fromPage 和 toPage 以及它们之差，计算出翻页进度。
-        didTransitionPage(delegate, @selector(pageView:didTransitionPage:), self, transition);
-    };
-}
 
 
 @end

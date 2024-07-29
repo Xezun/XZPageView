@@ -12,6 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class XZPageView;
 
+typedef void (^XZPageViewDidShowBlock)(XZPageView *pageView, NSInteger currentPage);
+typedef void (^XZPageViewDidTransitionBlock)(XZPageView *pageView, CGFloat distance, CGFloat pageWidth, NSInteger from, NSInteger to);
+
 @interface XZPageViewManager : NSObject
 
 + (XZPageViewManager *)managerForPageView:(XZPageView *)pageView direction:(XZPageViewDirection)direction;
@@ -34,8 +37,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)resumeAutoPagingTimer;
 - (void)setCurrentPage:(NSInteger)newPage animated:(BOOL)animated;
 - (void)adjustContentInsets:(CGRect const)bounds;
-- (void)notifyDidShowPage:(nonnull Class)aClass;
-- (void)notifyDidTransitionPage:(nonnull Class)aClass;
+- (nullable XZPageViewDidShowBlock)notifyDidShowPage:(nonnull Class)aClass;
+- (nullable XZPageViewDidTransitionBlock)notifyDidTransitionPage:(nonnull Class)aClass;
 
 @end
 

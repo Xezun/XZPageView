@@ -63,8 +63,8 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     NSTimer * __unsafe_unretained _autoPagingTimer;
     
     /// 代理方法
-    void (^ _Nullable _didShowPageAtIndex)(XZPageView *pageView, NSInteger currentPage);
-    void (^ _Nullable _didTransitionPage)(XZPageView *pageView, CGFloat x, CGFloat width, NSInteger from, NSInteger to);
+    XZPageViewDidShowBlock _Nullable _didShowPage;
+    XZPageViewDidTransitionBlock _Nullable _didTransitionPage;
 }
 
 @end
@@ -148,7 +148,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     
     // 如果当前页发生了改变，发送事件
     if (_currentPage != oldValue) {
-        XZCallBlock(_didShowPageAtIndex, self, _currentPage);
+        XZCallBlock(_didShowPage, self, _currentPage);
     }
     
     // 重启自动翻页计时器
@@ -169,23 +169,55 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     if (_delegate != delegate) {
         _delegate = delegate;
         
-        _didShowPageAtIndex = nil;
+        _didShowPage = nil;
         _didTransitionPage  = nil;
         
         if ([delegate conformsToProtocol:@protocol(XZPageViewDelegate)]) {
             Class const aClass = [delegate class];
-            [_manager notifyDidShowPage:aClass];
-            [_manager notifyDidTransitionPage:aClass];
+            _didShowPage = [_manager notifyDidShowPage:aClass];
+            _didTransitionPage = [_manager notifyDidTransitionPage:aClass];
         }
     }
 }
 
 - (BOOL)bounces {
-    return _scrollView.alwaysBounceHorizontal;
+    switch (self.direction) {
+        case XZPageViewDirectionHorizontal:
+            return _scrollView.alwaysBounceHorizontal;
+            
+        case XZPageViewDirectionVertical:
+            return _scrollView.alwaysBounceVertical;
+    }
 }
 
 - (void)setBounces:(BOOL)bounces {
-    _scrollView.alwaysBounceHorizontal = bounces;
+    switch (self.direction) {
+        case XZPageViewDirectionHorizontal:
+            _scrollView.alwaysBounceHorizontal = bounces;
+            break;
+            
+        case XZPageViewDirectionVertical:
+            _scrollView.alwaysBounceVertical = bounces;
+            break;
+    }
+}
+
+- (void)setDirection:(XZPageViewDirection)direction {
+    if (_direction != direction) {
+        _direction = direction;
+        _manager = [XZPageViewManager managerForPageView:self direction:_direction];
+        switch (_direction) {
+            case XZPageViewDirectionHorizontal:
+                _scrollView.alwaysBounceHorizontal = _scrollView.alwaysBounceVertical;
+                _scrollView.alwaysBounceVertical = NO;
+                break;
+                
+            case XZPageViewDirectionVertical:
+                _scrollView.alwaysBounceVertical = _scrollView.alwaysBounceHorizontal;
+                _scrollView.alwaysBounceHorizontal = NO;
+                break;
+        }
+    }
 }
 
 - (void)setAutoPagingInterval:(NSTimeInterval)autoPagingInterval {
@@ -273,7 +305,7 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
     [_manager setCurrentPage:newPage animated:YES];
 
     // 自动翻页，发送事件
-    XZCallBlock(_didShowPageAtIndex, self, _currentPage);
+    XZCallBlock(_didShowPage, self, _currentPage);
 }
 
 #pragma mark - 私有方法
