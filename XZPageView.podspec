@@ -33,6 +33,7 @@ Pod::Spec.new do |s|
   
   s.default_subspec = 'Code'
   s.dependency 'XZDefines/XZMacro'
+  s.dependency 'XZDefines/XZRuntime'
   
   s.subspec 'Code' do |ss|
     ss.source_files = 'XZPageView/Code/**/*.{h,m}'

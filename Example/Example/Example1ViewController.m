@@ -72,7 +72,7 @@
     self.pageControl.currentPage = index;
 }
 
-- (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition {
+- (void)pageView:(XZPageView *)pageView didTurnPageWithTransition:(CGFloat)transition {
     NSLog(@"didTransitionPage: %f", transition);
 }
 
@@ -107,7 +107,7 @@
 }
  
 - (IBAction)contentOffsetSegmentedControlValueChanged:(UISegmentedControl *)sender {
-    UIScrollView *scrollView = self.pageView.subviews.firstObject;
+    UIScrollView *scrollView = self.pageView;
     CGFloat const value = [[sender titleForSegmentAtIndex:sender.selectedSegmentIndex] floatValue];
     [scrollView setContentOffset:CGPointMake(scrollView.frame.size.width * value, 0) animated:YES];
 }

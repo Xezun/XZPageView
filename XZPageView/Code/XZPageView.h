@@ -42,7 +42,7 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 @end
 
 /// XZPageView 事件方法列表。
-@protocol XZPageViewDelegate <NSObject>
+@protocol XZPageViewDelegate <UIScrollViewDelegate>
 
 @optional
 /// 翻页到某页时，此方法会被调用。
@@ -54,23 +54,17 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 /// 当用户翻动页面时，此方法会被调用。
 /// @param pageView 调用此方法的 XZPageView 对象。
 /// @param transition 翻动的进度，值范围为 (0, 1.0) 之间，不包括边界值。
-- (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition;
+- (void)pageView:(XZPageView *)pageView didTurnPageWithTransition:(CGFloat)transition;
 
 @end
 
 /// 翻页视图：支持多视图横向滚动翻页的视图。
-@interface XZPageView : UIView <UIScrollViewDelegate>
-
-@property (nonatomic, strong, readonly) UIScrollView *scrollView;
+@interface XZPageView : UIScrollView <UIScrollViewDelegate>
 
 /// 是否为循环模式。默认 YES 。
 /// @discussion 循环模式下，不管在任何位置都可以向前或者向后翻页。
 /// @discussion 在最大页向后翻页会到第一页，在第一页向前翻页则会到最后一页。
 @property (nonatomic, setter=setLooped:) BOOL isLooped;
-
-/// 弹簧效果，默认 NO 关闭弹簧效果。
-/// @discussion 只有在单页时才有效果。
-@property (nonatomic) BOOL bounces;
 
 /// 页面的数量。
 @property (nonatomic, readonly) NSInteger numberOfPages;
@@ -96,7 +90,6 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 /// 事件代理。
 @property (nonatomic, weak) id<XZPageViewDelegate> delegate;
 /// 数据源。
-/// @discussion 设置数据源立即调用 `-reloadData` 方法。
 @property (nonatomic, weak) id<XZPageViewDataSource> dataSource;
 
 /// 重新加载。
@@ -109,18 +102,19 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 
 // MARK: - 重写父类的方法
 - (void)didMoveToWindow NS_REQUIRES_SUPER;
-- (void)layoutSubviews NS_REQUIRES_SUPER;
 
 // MARK: - UIScrollViewDelegate
+
+// 由于属性 isDragging/isDecelerating 的更新在 contentOffset/bounds.origin 更新之后，
+// 所以在无法判断 contentOffset/bounds.origin 变化时的滚动状态，继而无法判断翻页状态。
+// 因此 XZPageView 监听了代理方法来解决相关问题：
+// 默认 delegate 会被设置为自身；如果外部设置代理，则会通过运行时，向目标注入处理事件的逻辑。
+
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate NS_REQUIRES_SUPER;
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 
-@end
-
-@interface XZPageView (XZPageViewDeprecated)
-@property (nonatomic, getter=isLooped, setter=setLooped:) BOOL isLoopable API_DEPRECATED_WITH_REPLACEMENT("isLooped", ios(1.0, 1.0), watchos(1.0, 1.0), tvos(1.0, 1.0));
 @end
 
 NS_ASSUME_NONNULL_END
