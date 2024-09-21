@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'XZPageView'
-  s.version          = '1.2.9'
+  s.version          = '2.0.0'
   s.summary          = 'XZPageView 是一款管理分页视图高效组件'
 
 # This description is used to generate tags and improve search results.
@@ -28,7 +28,7 @@ Pod::Spec.new do |s|
   s.source           = { :git => 'https://github.com/Xezun/XZPageView.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '11.0'
+  s.ios.deployment_target = '12.0'
   s.pod_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'XZPAGEVIEW_FRAMEWORK=1' }
   
   s.default_subspec = 'Code'
