@@ -6,60 +6,43 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <XZPageView/XZPageViewDefines.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// 翻页效果动画时长。
-FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
-
-@class XZPageView;
-
-@protocol UITableViewDataSource;
-
-/// XZPageView 数据源。
-@protocol XZPageViewDataSource <NSObject>
-
-@required
-/// 在此方法中返回元素的个数。
-/// @param pageView 调用此方法的对象
-- (NSInteger)numberOfPagesInPageView:(XZPageView *)pageView;
-
-/// 加载视图。在此方法中创建或重用页面视图，配置并返回它们。
-/// @discussion 在页面切换过程中，不展示视图不会立即移除，而是保留为备用视图：
-/// @discussion 1、切回备用视图，不需要重新加载。
-/// @discussion 2、切换新视图时，备用视图将作为 reusingView 参数提供给 dataSource 复用。
-/// @param pageView 调用此方法的对象
-/// @param index 元素次序
-/// @param reusingView 可重用的视图
-- (UIView *)pageView:(XZPageView *)pageView viewForPageAtIndex:(NSInteger)index reusingView:(nullable __kindof UIView *)reusingView;
-                                    
-/// 当视图不再展示时，此方法会被调用，此方法返回的视图将会被缓存，并在需要时重用。
-/// @discussion 如果有待展示的内容，视图会直接在 `pageView:viewForPageAtIndex:reusingView:` 方法中作为 reusingView 使用，而不会调用此方法。
-/// @param pageView 调用此方法的对象
-/// @param reusingView 需要被重置的视图
-- (nullable UIView *)pageView:(XZPageView *)pageView prepareForReusingView:(__kindof UIView *)reusingView;
-
-@end
-
-/// XZPageView 事件方法列表。
-@protocol XZPageViewDelegate <UIScrollViewDelegate>
-
-@optional
-/// 翻页到某页时，此方法会被调用。
-/// @discussion 只有用户操作或者自动翻页会触发此代理方法。
-/// @param pageView 调用此方法的 XZPageView 对象
-/// @param index 被展示元素的索引，不会是 NSNotFound
-- (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index;
-
-/// 当用户翻动页面时，此方法会被调用。
-/// @param pageView 调用此方法的 XZPageView 对象。
-/// @param transition 翻动的进度，值范围为 (0, 1.0) 之间，不包括边界值。
-- (void)pageView:(XZPageView *)pageView didTurnPageWithTransition:(CGFloat)transition;
-
-@end
-
 /// 翻页视图：支持多视图横向滚动翻页的视图。
-@interface XZPageView : UIScrollView <UIScrollViewDelegate>
+@interface XZPageView : UIScrollView <UIScrollViewDelegate> {
+    @package
+    BOOL                _isLooped;
+    NSInteger           _numberOfPages;
+    UIView  * _Nullable _currentPageView;
+    NSInteger           _currentPage;
+    UIView  * _Nullable _reusingPageView;
+    NSInteger           _reusingPage;
+    BOOL                _reusingPageDirection; ///< YES 表示加载在正向滚动的方向上，NO 表示加载在反向滚动的方向上。
+    
+    NSTimeInterval      _autoPagingInterval;
+    /// 自动翻页定时器，请使用方法操作计时器，而非直接使用变量。
+    /// 1、视图必须添加到 window 上，才会创建定时器。
+    /// 2、从 widow 上移除会销毁定时器，并在再次添加到 window 上时重建。
+    /// 3、滚动的过程中，定时器会暂停，并在滚动后重新开始计时。
+    /// 4、刷新数据，定时器会重新开始计时。
+    /// 5、改变 currentPage 定时器会重新计时。
+    NSTimer * _Nullable __unsafe_unretained _autoPagingTimer;
+    
+    void (^ _Nullable _didShowPage)(XZPageView *pageView, NSInteger currentPage);
+    void (^ _Nullable _didTurnPage)(XZPageView *pageView, CGFloat x, CGFloat width, NSInteger from, NSInteger to);
+}
+
+- (instancetype)initWithFrame:(CGRect)frame orientation:(XZPageViewOrientation)orientation NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithCoder:(NSCoder *)coder NS_DESIGNATED_INITIALIZER;
+
+/// 翻页方向，默认横向。支持在 IB 中设置，使用 0 表示横向，使用 1 表示纵向。
+#if TARGET_INTERFACE_BUILDER
+@property (nonatomic) IBInspectable NSUInteger orientation;
+#else
+@property (nonatomic) XZPageViewOrientation orientation;
+#endif
 
 /// 是否为循环模式。默认 YES 。
 /// @discussion 循环模式下，不管在任何位置都可以向前或者向后翻页。
