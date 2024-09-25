@@ -24,8 +24,10 @@ UIKIT_STATIC_INLINE NSInteger XZLoopPage(NSInteger index, BOOL increases, NSInte
 }
 
 /// 判断 from => to 变化的应该执行的滚动方向，YES正向，NO反向。
+/// @discussion 非循环模式，或者数量2个以下，`from < to` 正向。
+/// @discussion 循环模式，且数量大于2个，`from < to` 或 `max => min` 正向。
 UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteger max, BOOL isLooped) {
-    return (isLooped ? (from < to || (from == max && to == 0)) : (from < to));
+    return (!isLooped || max < 2) ? (from < to) : ( (from == max && to == 0) || ((from < to) && !(from == 0 && to == max)) );
 }
 
 /// 交换两个变量的值
@@ -40,32 +42,40 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 - (instancetype)init NS_UNAVAILABLE;
 + (XZPageViewContext *)contextWithPageView:(XZPageView *)pageView orientation:(XZPageViewOrientation)orientation;
 
+@property (nonatomic, readonly) XZPageViewOrientation orientation;
+
 // 以下方法作为 XZPageView 的私有方法，子类不应重写它们。
 
 /// 辅助 XZPageView 初始化，仅在初始化方法中才可以调用。
 - (instancetype)didInitialize;
 
-- (void)layoutSubviews:(CGSize)size;
-- (void)reloadCurrentPageView:(CGSize const)bounds;
-- (void)reloadReusingPageView:(CGSize const)bounds;
+- (void)layoutSubviews:(CGRect const)bounds;
+- (void)reloadCurrentPageView:(CGRect const)bounds;
+- (void)reloadReusingPageView:(CGRect const)bounds;
 
+/// 启动自动翻页计时器。
+/// @discussion 1、若不满足启动条件，则销毁当前计时器；
+/// @discussion 2、满足条件，若计时器已开始，则重置当前开始计时；
+/// @discussion 3、满足条件，若计时器没创建，则自动创建。
 - (void)scheduleAutoPagingTimerIfNeeded;
 - (void)autoPagingTimerAction:(NSTimer *)timer;
-- (void)holdOnAutoPagingTimer;
+/// 暂停自动翻页计时器。
+- (void)freezeAutoPagingTimer;
+/// 重置自动翻页计时器。
 - (void)resumeAutoPagingTimer;
 
-- (void)willSetDelegate:(nullable Class)aClass;
+- (void)willSetDelegateOfClass:(nullable Class)aClass;
 - (void)notifyDidTurnPage:(nonnull Class)aClass;
 - (void)notifyDidShowPage:(nonnull Class)aClass;
 
 // 子类需要重写的方法。
 
-- (void)layoutCurrentPageView:(CGSize const)bounds;
-- (void)layoutReusingPageView:(CGSize const)bounds;
-- (void)adjustContentInsets:(CGSize const)bounds;
+- (void)layoutCurrentPageView:(CGRect const)bounds;
+- (void)layoutReusingPageView:(CGRect const)bounds;
+- (void)adjustContentInsets:(CGRect const)bounds;
 
 - (void)didScroll:(BOOL)stopped;
-- (void)didScrollToReusingPage:(CGSize const)bounds maxPage:(NSInteger const)maxPage direction:(BOOL const)direction;
+- (void)didScrollToReusingPage:(CGRect const)bounds maxPage:(NSInteger const)maxPage direction:(BOOL const)direction;
 
 /// 不处理、发送事件。
 - (void)setCurrentPage:(NSInteger)newPage animated:(BOOL)animated;

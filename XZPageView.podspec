@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
   s.name             = 'XZPageView'
   s.version          = '2.0.0'
-  s.summary          = 'XZPageView 是一款管理分页视图高效组件'
+  s.summary          = 'XZPageView 是一款高效的分页视图管理组件'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-                       组件 XZPageView 的分页，支持使用自定义视图，支持自动轮播、循环轮播。
+                       组件 XZPageView 支持使用自定义视图，支持自动轮播、循环轮播、垂直和水平翻页。
                        DESC
 
   s.homepage         = 'https://github.com/Xezun/XZPageView'
@@ -29,7 +29,7 @@ Pod::Spec.new do |s|
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '12.0'
-  s.pod_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'XZPAGEVIEW_FRAMEWORK=1' }
+  s.pod_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'XZ_FRAMEWORK=1' }
   
   s.default_subspec = 'Code'
   s.dependency 'XZDefines/XZMacro'
@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
   
   s.subspec 'Code' do |ss|
     ss.source_files = 'XZPageView/Code/**/*.{h,m}'
-    # ss.project_header_files = 'XZPageView/Code/**/Private/*.{h,m}'
+    ss.project_header_files = 'XZPageView/Code/**/Private/*.{h,m}'
   end
   
   s.subspec 'DEBUG' do |ss|

@@ -89,13 +89,18 @@
 }
 
 - (IBAction)countSegmentAction:(UISegmentedControl *)sender {
-    self.count = sender.selectedSegmentIndex;
+    NSInteger const count = sender.selectedSegmentIndex;
+    self.count = count;
     [self.pageView reloadData];
-    self.pageControl.numberOfPages = self.count;
+    self.pageControl.numberOfPages = count;
 }
 
-- (IBAction)bouncesSwitchAction:(UISwitch *)sender {
-    self.pageView.bounces = sender.isOn;
+- (IBAction)orientationSwitchAction:(UISwitch *)sender {
+    if (sender.isOn) {
+        self.pageView.orientation = XZPageViewOrientationVertical;
+    } else {
+        self.pageView.orientation = XZPageViewOrientationHorizontal;
+    }
 }
 
 - (IBAction)widthSegmentedControlValueChanged:(UISegmentedControl *)sender {

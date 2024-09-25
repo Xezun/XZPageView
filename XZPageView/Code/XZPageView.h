@@ -34,25 +34,39 @@ NS_ASSUME_NONNULL_BEGIN
     void (^ _Nullable _didTurnPage)(XZPageView *pageView, CGFloat x, CGFloat width, NSInteger from, NSInteger to);
 }
 
+/// 指定初始化构造方法。
+/// - Parameters:
+///   - frame: 视图大小和位置
+///   - orientation: 翻页方向
 - (instancetype)initWithFrame:(CGRect)frame orientation:(XZPageViewOrientation)orientation NS_DESIGNATED_INITIALIZER;
+
+/// 支持在 IB 中使用。
+/// - Parameter coder: NSCoder 对象
 - (nullable instancetype)initWithCoder:(NSCoder *)coder NS_DESIGNATED_INITIALIZER;
 
-/// 翻页方向，默认横向。支持在 IB 中设置，使用 0 表示横向，使用 1 表示纵向。
-#if TARGET_INTERFACE_BUILDER
-@property (nonatomic) IBInspectable NSUInteger orientation;
-#else
+// MARK: - 重写父类的方法
+- (void)didMoveToWindow NS_REQUIRES_SUPER;
+
+/// 翻页方向，默认横向。
+/// @note
+/// 在 IB 中，可通过 `User Defined Runtime Attributes` 设置 0 表示横向，设置 1 表示纵向。
+/// @discussion
+/// Xcode 16 取消了 `\@IBDesignable` 标记，不能使用宏 `TARGET_INTERFACE_BUILDER` 来条件编译。
 @property (nonatomic) XZPageViewOrientation orientation;
-#endif
 
 /// 是否为循环模式。默认 YES 。
 /// @discussion 循环模式下，不管在任何位置都可以向前或者向后翻页。
 /// @discussion 在最大页向后翻页会到第一页，在第一页向前翻页则会到最后一页。
 @property (nonatomic, setter=setLooped:) BOOL isLooped;
 
+/// 自动翻到下一页的时间间隔，单位秒，不包括翻页动画时长。
+@property (nonatomic) NSTimeInterval autoPagingInterval;
+
 /// 页面的数量。
 @property (nonatomic, readonly) NSInteger numberOfPages;
 
-/// 当前页面，默认值 0 。
+/// 当前页面。
+/// @note 值 NSNotFound 表示当前没有内容。
 /// @attention 设置此属性不会触发代理方法。
 @property (nonatomic) NSInteger currentPage;
 
@@ -76,15 +90,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) id<XZPageViewDataSource> dataSource;
 
 /// 重新加载。
-/// @discussion 会保持尽量当前的 currentPage 但不会超过最大页数。
-/// @discussion 自动翻页计时会重置。
+/// @discussion
+/// 当前页数 currentPage 可能会发生改变，以适配新的数据，但是不会发送事件。
+/// @discussion
+/// 自动翻页计时会重置。
 - (void)reloadData;
-
-/// 自动翻到下一页的时间间隔，单位秒，不包括翻页动画时长。
-@property (nonatomic) NSTimeInterval autoPagingInterval;
-
-// MARK: - 重写父类的方法
-- (void)didMoveToWindow NS_REQUIRES_SUPER;
 
 // MARK: - UIScrollViewDelegate
 

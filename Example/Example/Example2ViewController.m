@@ -43,6 +43,21 @@
     [self.pageView setCurrentPage:sender.selectedIndex animated:YES];
 }
 
+- (IBAction)orientationSwitchAction:(UISwitch *)sender {
+    NSString *title = nil;
+    if (sender.isOn) {
+        title = @"已切换为纵向滚动";
+        self.pageView.orientation = XZPageViewOrientationVertical;
+    } else {
+        title = @"已切换为横向滚动";
+        self.pageView.orientation = XZPageViewOrientationHorizontal;
+    }
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:nil preferredStyle:(UIAlertControllerStyleAlert)];
+    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:(UIAlertActionStyleDefault) handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
 - (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index {
     NSLog(@"didPageToIndex: %ld", index);
     [self.segmentedControl setSelectedIndex:index animated:YES];
