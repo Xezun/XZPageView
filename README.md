@@ -31,9 +31,10 @@ XZPageView 使用复用机制，只需两个 UIImageView 控件即可实现无�
 
 XZPageView 使用数据源机制，可以提供更大的自定义自由度，以适应各种开发需求。
 
-### 实现轮播图
+### 1、示例代码
 
 ```objc
+@implementation ViewController
 // 创建视图
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -41,6 +42,7 @@ XZPageView 使用数据源机制，可以提供更大的自定义自由度，以
     XZPageView *pageView = [[XZPageView alloc] initWithFrame:CGRectMake(0, 0, 375.0, 150.0)];
     [self.view addSubview:pageView];
     
+    pageView.delegate   = self;
     pageView.dataSource = self;
 }
 
@@ -63,28 +65,37 @@ XZPageView 使用数据源机制，可以提供更大的自定义自由度，以
     reusingView.image = nil; 
     return reusingView;
 }
-
+@end
 ```
 
-支持自动轮播及循环轮播。
+### 2、支持自动轮播及循环轮播
 
 ```objc
 self.pageView.isLoopable = YES;
 self.pageView.autoPagingInterval = 3.0;
 ```
 
-支持转场进度。
+### 3、支持垂直翻页
 
 ```objc
-- (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition {
-    NSLog(@"didTransitionPage: %f", transition);
+self.pageView.orientation = XZPageViewOrientationVertical;
+```
+
+### 4、支持播报转场进度
+
+```objc
+- (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index {
+    NSLog(@"didShowPageAtIndex: %f", transition);
+}
+
+- (void)pageView:(XZPageView *)pageView didTurnPageWithTransition:(CGFloat)transition {
+    NSLog(@"didTurnPageWithTransition: %f", transition);
 }
 ```
 
 ## 版本计划
 
 1. XZPageViewController
-2. 支持垂直翻页
 
 ## Author
 

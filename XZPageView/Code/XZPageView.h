@@ -6,76 +6,46 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <XZPageView/XZPageViewDefines.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// 翻页效果动画时长。
-FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
-
-@class XZPageView;
-
-@protocol UITableViewDataSource;
-
-/// XZPageView 数据源。
-@protocol XZPageViewDataSource <NSObject>
-
-@required
-/// 在此方法中返回元素的个数。
-/// @param pageView 调用此方法的对象
-- (NSInteger)numberOfPagesInPageView:(XZPageView *)pageView;
-
-/// 加载视图。在此方法中创建或重用页面视图，配置并返回它们。
-/// @discussion 在页面切换过程中，不展示视图不会立即移除，而是保留为备用视图：
-/// @discussion 1、切回备用视图，不需要重新加载。
-/// @discussion 2、切换新视图时，备用视图将作为 reusingView 参数提供给 dataSource 复用。
-/// @param pageView 调用此方法的对象
-/// @param index 元素次序
-/// @param reusingView 可重用的视图
-- (UIView *)pageView:(XZPageView *)pageView viewForPageAtIndex:(NSInteger)index reusingView:(nullable __kindof UIView *)reusingView;
-                                    
-/// 当视图不再展示时，此方法会被调用，此方法返回的视图将会被缓存，并在需要时重用。
-/// @discussion 如果有待展示的内容，视图会直接在 `pageView:viewForPageAtIndex:reusingView:` 方法中作为 reusingView 使用，而不会调用此方法。
-/// @param pageView 调用此方法的对象
-/// @param reusingView 需要被重置的视图
-- (nullable UIView *)pageView:(XZPageView *)pageView prepareForReusingView:(__kindof UIView *)reusingView;
-
-@end
-
-/// XZPageView 事件方法列表。
-@protocol XZPageViewDelegate <NSObject>
-
-@optional
-/// 翻页到某页时，此方法会被调用。
-/// @discussion 只有用户操作或者自动翻页会触发此代理方法。
-/// @param pageView 调用此方法的 XZPageView 对象
-/// @param index 被展示元素的索引，不会是 NSNotFound
-- (void)pageView:(XZPageView *)pageView didShowPageAtIndex:(NSInteger)index;
-
-/// 当用户翻动页面时，此方法会被调用。
-/// @param pageView 调用此方法的 XZPageView 对象。
-/// @param transition 翻动的进度，值范围为 (0, 1.0) 之间，不包括边界值。
-- (void)pageView:(XZPageView *)pageView didTransitionPage:(CGFloat)transition;
-
-@end
-
 /// 翻页视图：支持多视图横向滚动翻页的视图。
-@interface XZPageView : UIView <UIScrollViewDelegate>
+@interface XZPageView : UIScrollView <UIScrollViewDelegate>
 
-@property (nonatomic, strong, readonly) UIScrollView *scrollView;
+/// 指定初始化构造方法。
+/// - Parameters:
+///   - frame: 视图大小和位置
+///   - orientation: 翻页方向
+- (instancetype)initWithFrame:(CGRect)frame orientation:(XZPageViewOrientation)orientation NS_DESIGNATED_INITIALIZER;
+
+/// 支持在 IB 中使用。
+/// - Parameter coder: NSCoder 对象
+- (nullable instancetype)initWithCoder:(NSCoder *)coder NS_DESIGNATED_INITIALIZER;
+
+// MARK: - 重写父类的方法
+- (void)didMoveToWindow NS_REQUIRES_SUPER;
+
+/// 翻页方向，默认横向。
+/// @note
+/// 在 IB 中，可通过 `User Defined Runtime Attributes` 设置 0 表示横向，设置 1 表示纵向。
+/// @discussion
+/// Xcode 16 取消了 `\@IBDesignable` 标记，不能使用宏 `TARGET_INTERFACE_BUILDER` 进行条件编译，无法为枚举属性添加 IBInspectable 标记。
+@property (nonatomic) XZPageViewOrientation orientation;
 
 /// 是否为循环模式。默认 YES 。
 /// @discussion 循环模式下，不管在任何位置都可以向前或者向后翻页。
 /// @discussion 在最大页向后翻页会到第一页，在第一页向前翻页则会到最后一页。
 @property (nonatomic, setter=setLooped:) BOOL isLooped;
 
-/// 弹簧效果，默认 NO 关闭弹簧效果。
-/// @discussion 只有在单页时才有效果。
-@property (nonatomic) BOOL bounces;
+/// 自动翻到下一页的时间间隔，单位秒，不包括翻页动画时长。
+@property (nonatomic) NSTimeInterval autoPagingInterval;
 
 /// 页面的数量。
 @property (nonatomic, readonly) NSInteger numberOfPages;
 
-/// 当前页面，默认值 0 。
+/// 当前页面。
+/// @note 值 NSNotFound 表示当前没有内容。
 /// @attention 设置此属性不会触发代理方法。
 @property (nonatomic) NSInteger currentPage;
 
@@ -96,31 +66,27 @@ FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
 /// 事件代理。
 @property (nonatomic, weak) id<XZPageViewDelegate> delegate;
 /// 数据源。
-/// @discussion 设置数据源立即调用 `-reloadData` 方法。
 @property (nonatomic, weak) id<XZPageViewDataSource> dataSource;
 
 /// 重新加载。
-/// @discussion 会保持尽量当前的 currentPage 但不会超过最大页数。
-/// @discussion 自动翻页计时会重置。
+/// @discussion
+/// 当前页数 currentPage 可能会发生改变，以适配新的数据，但是不会发送事件。
+/// @discussion
+/// 自动翻页计时会重置。
 - (void)reloadData;
 
-/// 自动翻到下一页的时间间隔，单位秒，不包括翻页动画时长。
-@property (nonatomic) NSTimeInterval autoPagingInterval;
-
-// MARK: - 重写父类的方法
-- (void)didMoveToWindow NS_REQUIRES_SUPER;
-- (void)layoutSubviews NS_REQUIRES_SUPER;
-
 // MARK: - UIScrollViewDelegate
+
+// 由于属性 isDragging/isDecelerating 的更新在 contentOffset/bounds.origin 更新之后，
+// 所以在无法判断 contentOffset/bounds.origin 变化时的滚动状态，继而无法判断翻页状态。
+// 因此 XZPageView 监听了代理方法来解决相关问题：
+// 默认 delegate 会被设置为自身；如果外部设置代理，则会通过运行时，向目标注入处理事件的逻辑。
+
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate NS_REQUIRES_SUPER;
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 
-@end
-
-@interface XZPageView (XZPageViewDeprecated)
-@property (nonatomic, getter=isLooped, setter=setLooped:) BOOL isLoopable API_DEPRECATED_WITH_REPLACEMENT("isLooped", ios(1.0, 1.0), watchos(1.0, 1.0), tvos(1.0, 1.0));
 @end
 
 NS_ASSUME_NONNULL_END
