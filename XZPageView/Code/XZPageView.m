@@ -6,15 +6,10 @@
 //
 
 #import "XZPageView.h"
+#import "XZPageViewInternal.h"
 #import "XZPageViewContext.h"
 @import ObjectiveC;
 @import XZDefines;
-
-@interface XZPageView () {
-    XZPageViewContext *_context;
-}
-
-@end
 
 @implementation XZPageView
 
@@ -260,7 +255,6 @@
     if (scrollView != self) {
         return;
     }
-    
     [_context didScroll:YES];
 }
 

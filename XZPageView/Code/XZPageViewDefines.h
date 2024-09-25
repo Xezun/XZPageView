@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 翻页效果动画时长。
 FOUNDATION_EXPORT NSTimeInterval const XZPageViewAnimationDuration;
-@protocol UITableViewDataSource;
 
 /// 翻页方向。
 typedef NS_ENUM(NSUInteger, XZPageViewOrientation) {

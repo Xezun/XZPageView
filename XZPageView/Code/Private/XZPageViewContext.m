@@ -6,7 +6,7 @@
 //
 
 #import "XZPageViewContext.h"
-#import "XZPageView.h"
+#import "XZPageViewInternal.h"
 @import XZDefines;
 @import ObjectiveC;
 

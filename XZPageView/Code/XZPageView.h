@@ -11,28 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// 翻页视图：支持多视图横向滚动翻页的视图。
-@interface XZPageView : UIScrollView <UIScrollViewDelegate> {
-    @package
-    BOOL                _isLooped;
-    NSInteger           _numberOfPages;
-    UIView  * _Nullable _currentPageView;
-    NSInteger           _currentPage;
-    UIView  * _Nullable _reusingPageView;
-    NSInteger           _reusingPage;
-    BOOL                _reusingPageDirection; ///< YES 表示加载在正向滚动的方向上，NO 表示加载在反向滚动的方向上。
-    
-    NSTimeInterval      _autoPagingInterval;
-    /// 自动翻页定时器，请使用方法操作计时器，而非直接使用变量。
-    /// 1、视图必须添加到 window 上，才会创建定时器。
-    /// 2、从 widow 上移除会销毁定时器，并在再次添加到 window 上时重建。
-    /// 3、滚动的过程中，定时器会暂停，并在滚动后重新开始计时。
-    /// 4、刷新数据，定时器会重新开始计时。
-    /// 5、改变 currentPage 定时器会重新计时。
-    NSTimer * _Nullable __unsafe_unretained _autoPagingTimer;
-    
-    void (^ _Nullable _didShowPage)(XZPageView *pageView, NSInteger currentPage);
-    void (^ _Nullable _didTurnPage)(XZPageView *pageView, CGFloat x, CGFloat width, NSInteger from, NSInteger to);
-}
+@interface XZPageView : UIScrollView <UIScrollViewDelegate>
 
 /// 指定初始化构造方法。
 /// - Parameters:
@@ -51,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note
 /// 在 IB 中，可通过 `User Defined Runtime Attributes` 设置 0 表示横向，设置 1 表示纵向。
 /// @discussion
-/// Xcode 16 取消了 `\@IBDesignable` 标记，不能使用宏 `TARGET_INTERFACE_BUILDER` 来条件编译。
+/// Xcode 16 取消了 `\@IBDesignable` 标记，不能使用宏 `TARGET_INTERFACE_BUILDER` 进行条件编译，无法为枚举属性添加 IBInspectable 标记。
 @property (nonatomic) XZPageViewOrientation orientation;
 
 /// 是否为循环模式。默认 YES 。

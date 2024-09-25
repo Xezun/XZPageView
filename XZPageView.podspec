@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
   
   s.subspec 'Code' do |ss|
     ss.source_files = 'XZPageView/Code/**/*.{h,m}'
-    ss.project_header_files = 'XZPageView/Code/**/Private/*.{h,m}'
+    ss.project_header_files = 'XZPageView/Code/**/Private/*.h'
   end
   
   s.subspec 'DEBUG' do |ss|
