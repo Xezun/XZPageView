@@ -6,7 +6,7 @@
 //
 
 #import "XZPageViewContext.h"
-#import "XZPageViewInternal.h"
+#import "XZPageViewExtension.h"
 @import XZDefines;
 @import ObjectiveC;
 
@@ -18,15 +18,20 @@
 
 + (XZPageViewContext *)contextWithPageView:(XZPageView *)pageView orientation:(XZPageViewOrientation)orientation {
     switch (orientation) {
-        case XZPageViewOrientationHorizontal:
+        case XZPageViewOrientationHorizontal: {
             return [[XZPageViewContext alloc] initWithPageView:pageView];
             break;
-        case XZPageViewOrientationVertical:
+        }
+        case XZPageViewOrientationVertical: {
             return [[XZPageViewVerticalContext alloc] initWithPageView:pageView];
             break;
+        }
+        default: {
+            NSString *reason = [NSString stringWithFormat:@"参数 orientation=%ld 不是合法的枚举值", (long)orientation];
+            @throw [NSException exceptionWithName:NSInvalidArgumentException reason:reason userInfo:nil];
+            break;
+        }
     }
-    NSString *reason = [NSString stringWithFormat:@"参数 orientation=%ld 不是合法的枚举值", (long)orientation];
-    @throw [NSException exceptionWithName:NSInvalidArgumentException reason:reason userInfo:nil];
 }
 
 - (instancetype)initWithPageView:(XZPageView *)pageView {
@@ -39,31 +44,6 @@
 
 - (XZPageViewOrientation)orientation {
     return XZPageViewOrientationHorizontal;
-}
-
-- (instancetype)didInitialize {
-    // 默认以自身为代理
-    struct objc_super super = {
-        .receiver = _pageView,
-        .super_class = class_getSuperclass(object_getClass(_pageView))
-    };
-    ((void(*)(struct objc_super *, SEL, id<UIScrollViewDelegate>))objc_msgSendSuper)(&super, @selector(setDelegate:), _pageView);
-    
-    _pageView->_isLooped      = YES;
-    _pageView->_currentPage   = NSNotFound;
-    _pageView->_reusingPage   = NSNotFound;
-    _pageView->_numberOfPages = 0;
-    
-    _pageView.clipsToBounds                  = YES;
-    _pageView.contentSize                    = _pageView.bounds.size;
-    _pageView.contentInset                   = UIEdgeInsetsZero;
-    _pageView.pagingEnabled                  = YES;
-    _pageView.alwaysBounceVertical           = NO;
-    _pageView.alwaysBounceHorizontal         = NO;
-    _pageView.showsVerticalScrollIndicator   = NO;
-    _pageView.showsHorizontalScrollIndicator = NO;
-    _pageView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
-    return self;
 }
 
 - (void)layoutSubviews:(const CGRect)bounds {
@@ -150,175 +130,195 @@
     }
 }
 
-- (void)willSetDelegateOfClass:(nullable Class)aClass {
-    if (aClass == Nil || [aClass isSubclassOfClass:[XZPageView class]]) {
+- (void)handleDelegateOfClass:(Class)aClass {
+    if ([aClass isSubclassOfClass:[XZPageView class]]) {
         return;
     }
     
     static const void * const _isHandled = &_isHandled;
-    if (objc_getAssociatedObject(aClass, _isHandled)) {
-        return;
-    }
-    objc_setAssociatedObject(aClass, _isHandled, @(YES), OBJC_ASSOCIATION_COPY_NONATOMIC);
-    
-    {
-        typedef void (*MethodType)(id, SEL, UIScrollView *);
-        SEL          const sel   = @selector(scrollViewDidScroll:);
-        MethodType   const imp   = (MethodType)class_getMethodImplementation([XZPageView class], sel);
-        const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
-        xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-        }, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-            struct objc_super super = {
-                .receiver = self,
-                .super_class = class_getSuperclass(object_getClass(self))
-            };
-            ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
-        }, ^id _Nonnull(SEL  _Nonnull selector) {
-            return ^(id self, XZPageView *scrollView) {
+    if (!objc_getAssociatedObject(aClass, _isHandled)) {
+        objc_setAssociatedObject(aClass, _isHandled, @(YES), OBJC_ASSOCIATION_COPY_NONATOMIC);
+        
+        {
+            typedef void (*MethodType)(XZPageViewContext *, SEL, UIScrollView *);
+            SEL          const sel   = @selector(scrollViewDidScroll:);
+            MethodType   const imp   = (MethodType)method_getImplementation(class_getInstanceMethod([XZPageViewContext class], sel));
+            const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
+            xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView) {
                 if ([scrollView isKindOfClass:[XZPageView class]]) {
-                    [scrollView scrollViewDidScroll:scrollView];
+                    imp(scrollView->_context, sel, scrollView);
                 }
-                ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
-            };
-        });
+            }, ^(id self, XZPageView *scrollView) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView);
+                }
+                struct objc_super super = {
+                    .receiver = self,
+                    .super_class = class_getSuperclass(object_getClass(self))
+                };
+                ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
+            }, ^id _Nonnull(SEL  _Nonnull selector) {
+                return ^(id self, XZPageView *scrollView) {
+                    if ([scrollView isKindOfClass:[XZPageView class]]) {
+                        imp(scrollView->_context, sel, scrollView);
+                    }
+                    ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
+                };
+            });
+        }
+        
+        {
+            typedef void (*MethodType)(XZPageViewContext *, SEL, UIScrollView *);
+            SEL          const sel   = @selector(scrollViewWillBeginDragging:);
+            MethodType   const imp   = (MethodType)method_getImplementation(class_getInstanceMethod([XZPageViewContext class], sel));
+            const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
+            xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id<UIScrollViewDelegate> self, XZPageView *scrollView) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView);
+                }
+            }, ^(id self, XZPageView *scrollView) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView);
+                }
+                struct objc_super super = {
+                    .receiver = self,
+                    .super_class = class_getSuperclass(object_getClass(self))
+                };
+                ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
+            }, ^id _Nonnull(SEL  _Nonnull selector) {
+                return ^(id self, XZPageView *scrollView) {
+                    if ([scrollView isKindOfClass:[XZPageView class]]) {
+                        imp(scrollView->_context, sel, scrollView);
+                    }
+                    ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
+                };
+            });
+        }
+        
+        {
+            typedef void (*MethodType)(XZPageViewContext *, SEL, UIScrollView *, BOOL);
+            SEL          const sel   = @selector(scrollViewDidEndDragging:willDecelerate:);
+            MethodType   const imp   = (MethodType)method_getImplementation(class_getInstanceMethod([XZPageViewContext class], sel));
+            const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
+            xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView, BOOL decelerate) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView, decelerate);
+                }
+            }, ^(id self, XZPageView *scrollView, BOOL decelerate) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView, decelerate);
+                }
+                struct objc_super super = {
+                    .receiver = self,
+                    .super_class = class_getSuperclass(object_getClass(self))
+                };
+                ((void(*)(struct objc_super *, SEL, UIScrollView *, BOOL))objc_msgSendSuper)(&super, sel, scrollView, decelerate);
+            }, ^id _Nonnull(SEL  _Nonnull selector) {
+                return ^(id self, XZPageView *scrollView, BOOL decelerate) {
+                    if ([scrollView isKindOfClass:[XZPageView class]]) {
+                        imp(scrollView->_context, sel, scrollView, decelerate);
+                    }
+                    ((void(*)(id, SEL, UIScrollView *, BOOL))objc_msgSend)(self, selector, scrollView, decelerate);
+                };
+            });
+        }
+        
+        {
+            typedef void (*MethodType)(XZPageViewContext *, SEL, UIScrollView *);
+            SEL          const sel   = @selector(scrollViewDidEndDecelerating:);
+            MethodType   const imp   = (MethodType)method_getImplementation(class_getInstanceMethod([XZPageViewContext class], sel));
+            const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
+            xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView);
+                }
+            }, ^(id self, XZPageView *scrollView) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView);
+                }
+                struct objc_super super = {
+                    .receiver = self,
+                    .super_class = class_getSuperclass(object_getClass(self))
+                };
+                ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
+            }, ^id _Nonnull(SEL  _Nonnull selector) {
+                return ^(id self, XZPageView *scrollView) {
+                    if ([scrollView isKindOfClass:[XZPageView class]]) {
+                        imp(scrollView->_context, sel, scrollView);
+                    }
+                    ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
+                };
+            });
+        }
+        
+        {
+            typedef void (*MethodType)(XZPageViewContext *, SEL, UIScrollView *);
+            SEL          const sel   = @selector(scrollViewDidEndScrollingAnimation:);
+            MethodType   const imp   = (MethodType)method_getImplementation(class_getInstanceMethod([XZPageViewContext class], sel));
+            const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
+            xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView);
+                }
+            }, ^(id self, XZPageView *scrollView) {
+                if ([scrollView isKindOfClass:[XZPageView class]]) {
+                    imp(scrollView->_context, sel, scrollView);
+                }
+                struct objc_super super = {
+                    .receiver = self,
+                    .super_class = class_getSuperclass(object_getClass(self))
+                };
+                ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
+            }, ^id _Nonnull(SEL  _Nonnull selector) {
+                return ^(id self, XZPageView *scrollView) {
+                    if ([scrollView isKindOfClass:[XZPageView class]]) {
+                        imp(scrollView->_context, sel, scrollView);
+                    }
+                    ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
+                };
+            });
+        }
     }
     
-    {
-        typedef void (*MethodType)(id, SEL, UIScrollView *);
-        SEL          const sel   = @selector(scrollViewWillBeginDragging:);
-        MethodType   const imp   = (MethodType)class_getMethodImplementation([XZPageView class], sel);
-        const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
-        xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-        }, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-            struct objc_super super = {
-                .receiver = self,
-                .super_class = class_getSuperclass(object_getClass(self))
-            };
-            ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
-        }, ^id _Nonnull(SEL  _Nonnull selector) {
-            return ^(id self, XZPageView *scrollView) {
-                if ([scrollView isKindOfClass:[XZPageView class]]) {
-                    imp(scrollView, sel, scrollView);
-                }
-                ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
-            };
-        });
-    }
-    
-    {
-        typedef void (*MethodType)(id, SEL, UIScrollView *, BOOL);
-        SEL          const sel   = @selector(scrollViewDidEndDragging:willDecelerate:);
-        MethodType   const imp   = (MethodType)class_getMethodImplementation([XZPageView class], sel);
-        const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
-        xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView, BOOL decelerate) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView, decelerate);
-            }
-        }, ^(id self, XZPageView *scrollView, BOOL decelerate) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView, decelerate);
-            }
-            struct objc_super super = {
-                .receiver = self,
-                .super_class = class_getSuperclass(object_getClass(self))
-            };
-            ((void(*)(struct objc_super *, SEL, UIScrollView *, BOOL))objc_msgSendSuper)(&super, sel, scrollView, decelerate);
-        }, ^id _Nonnull(SEL  _Nonnull selector) {
-            return ^(id self, XZPageView *scrollView, BOOL decelerate) {
-                if ([scrollView isKindOfClass:[XZPageView class]]) {
-                    imp(scrollView, sel, scrollView, decelerate);
-                }
-                ((void(*)(id, SEL, UIScrollView *, BOOL))objc_msgSend)(self, selector, scrollView, decelerate);
-            };
-        });
-    }
-    
-    {
-        typedef void (*MethodType)(id, SEL, UIScrollView *);
-        SEL          const sel   = @selector(scrollViewDidEndDecelerating:);
-        MethodType   const imp   = (MethodType)class_getMethodImplementation([XZPageView class], sel);
-        const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
-        xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-        }, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-            struct objc_super super = {
-                .receiver = self,
-                .super_class = class_getSuperclass(object_getClass(self))
-            };
-            ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
-        }, ^id _Nonnull(SEL  _Nonnull selector) {
-            return ^(id self, XZPageView *scrollView) {
-                if ([scrollView isKindOfClass:[XZPageView class]]) {
-                    imp(scrollView, sel, scrollView);
-                }
-                ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
-            };
-        });
-    }
-    
-    {
-        typedef void (*MethodType)(id, SEL, UIScrollView *);
-        SEL          const sel   = @selector(scrollViewDidEndScrollingAnimation:);
-        MethodType   const imp   = (MethodType)class_getMethodImplementation([XZPageView class], sel);
-        const char * const types = protocol_getMethodDescription(@protocol(UIScrollViewDelegate), sel, NO, YES).types;
-        xz_objc_class_addMethodWithBlock(aClass, sel, types, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-        }, ^(id self, XZPageView *scrollView) {
-            if ([scrollView isKindOfClass:[XZPageView class]]) {
-                imp(scrollView, sel, scrollView);
-            }
-            struct objc_super super = {
-                .receiver = self,
-                .super_class = class_getSuperclass(object_getClass(self))
-            };
-            ((void(*)(struct objc_super *, SEL, UIScrollView *))objc_msgSendSuper)(&super, sel, scrollView);
-        }, ^id _Nonnull(SEL  _Nonnull selector) {
-            return ^(id self, XZPageView *scrollView) {
-                if ([scrollView isKindOfClass:[XZPageView class]]) {
-                    imp(scrollView, sel, scrollView);
-                }
-                ((void(*)(id, SEL, UIScrollView *))objc_msgSend)(self, selector, scrollView);
-            };
-        });
-    }
+    [self notifyDelegateOfClass:aClass];
 }
 
+- (void)notifyDelegateOfClass:(Class)aClass {
+    [self notifyDidShowPage:aClass];
+    [self notifyDidTurnPage:aClass];
+}
+
+/// - Attention: 调用次方法前已判断 aClass 遵循 XZPageViewDelegate 协议。
 - (void)notifyDidShowPage:(nonnull Class)aClass {
     typedef void (*MethodType)(id<XZPageViewDelegate>, SEL, XZPageView *, NSInteger);
+    _pageView->_didShowPage = nil;
     
-    MethodType const didShowPageAtIndex = (MethodType)class_getMethodImplementation(aClass, @selector(pageView:didShowPageAtIndex:));
-    if (didShowPageAtIndex == NULL) return;
+    SEL const selector = @selector(pageView:didShowPageAtIndex:);
+    if (![aClass instancesRespondToSelector:selector]) {
+        return;
+    }
+    
+    MethodType const didShowPage = (MethodType)method_getImplementation(class_getInstanceMethod(aClass, selector));
+    if (didShowPage == NULL) return;
     
     _pageView->_didShowPage = ^(XZPageView * const self, NSInteger currentPage) {
         id const delegate = self.delegate;
         if (delegate == nil || delegate == self) return;
-        didShowPageAtIndex(delegate, @selector(pageView:didShowPageAtIndex:), self, currentPage);
+        didShowPage(delegate, @selector(pageView:didShowPageAtIndex:), self, currentPage);
     };
 }
 
+/// - Attention: 调用次方法前已判断 aClass 遵循 XZPageViewDelegate 协议。
 - (void)notifyDidTurnPage:(nonnull Class)aClass {
     typedef void (*MethodType)(id<XZPageViewDelegate>, SEL, XZPageView *, CGFloat);
+    _pageView->_didTurnPage = nil;
     
-    MethodType const didTurnPage = (MethodType)class_getMethodImplementation(aClass, @selector(pageView:didTurnPageWithTransition:));
+    SEL const selector = @selector(pageView:didTurnPageWithTransition:);
+    if (![aClass instancesRespondToSelector:selector]) {
+        return;
+    }
+    
+    MethodType const didTurnPage = (MethodType)method_getImplementation(class_getInstanceMethod(aClass, selector));
     if (didTurnPage == NULL) return;
     
     _pageView->_didTurnPage = ^(XZPageView * const self, CGFloat x, CGFloat width, NSInteger fromPage, NSInteger toPage) {
@@ -577,6 +577,61 @@
     } else {
         [_pageView setBounds:CGRectMake(0, 0, bounds.size.width, bounds.size.height)];
     }
+}
+
+#pragma mark - UIScrollViewDelegate
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (scrollView != _pageView) {
+        return;
+    }
+    [self didScroll:NO];
+}
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    if (scrollView != _pageView) {
+        return;
+    }
+    
+    if (_pageView->_numberOfPages <= 1) {
+        return;
+    }
+    
+    // 用户操作，暂停计时器
+    [self freezeAutoPagingTimer];
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    if (scrollView != _pageView) {
+        return;
+    }
+    
+    // 用户停止操作，恢复计时器
+    if (_pageView->_numberOfPages > 1) {
+        [self resumeAutoPagingTimer];
+    }
+    
+    // 检查翻页：用户停止操作
+    if (decelerate) {
+        return; // 进入减速状态，在减速停止后再决定
+    }
+    
+    // 直接停止滚动了。
+    [self didScroll:YES];
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    if (scrollView != _pageView) {
+        return;
+    }
+    [self didScroll:YES];
+}
+
+- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
+    if (scrollView != _pageView) {
+        return;
+    }
+    [self didScroll:YES];
 }
 
 @end

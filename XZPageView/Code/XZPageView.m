@@ -6,7 +6,7 @@
 //
 
 #import "XZPageView.h"
-#import "XZPageViewInternal.h"
+#import "XZPageViewExtension.h"
 #import "XZPageViewContext.h"
 @import ObjectiveC;
 @import XZDefines;
@@ -16,7 +16,7 @@
 - (instancetype)initWithFrame:(CGRect)frame orientation:(XZPageViewOrientation)orientation {
     self = [super initWithFrame:frame];
     if (self) {
-        _context = [[XZPageViewContext contextWithPageView:self orientation:orientation] didInitialize];
+        [self XZPageViewDidInitialize:orientation];
     }
     return self;
 }
@@ -28,9 +28,30 @@
 - (instancetype)initWithCoder:(NSCoder *)coder {
     self = [super initWithCoder:coder];
     if (self) {
-        _context = [[XZPageViewContext contextWithPageView:self orientation:XZPageViewOrientationHorizontal] didInitialize];
+        [self XZPageViewDidInitialize:(XZPageViewOrientationHorizontal)];
     }
     return self;
+}
+
+- (void)XZPageViewDidInitialize:(XZPageViewOrientation)orientation {
+    // 默认以自身为代理
+    _context = [XZPageViewContext contextWithPageView:self orientation:orientation];
+    [super setDelegate:_context];
+    
+    _isLooped      = YES;
+    _currentPage   = NSNotFound;
+    _reusingPage   = NSNotFound;
+    _numberOfPages = 0;
+    
+    self.clipsToBounds                  = YES;
+    self.contentSize                    = self.bounds.size;
+    self.contentInset                   = UIEdgeInsetsZero;
+    self.pagingEnabled                  = YES;
+    self.alwaysBounceVertical           = NO;
+    self.alwaysBounceHorizontal         = NO;
+    self.showsVerticalScrollIndicator   = NO;
+    self.showsHorizontalScrollIndicator = NO;
+    self.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
 }
 
 #pragma mark - 重写方法
@@ -148,31 +169,17 @@
 }
 
 - (void)setDelegate:(id<XZPageViewDelegate>)delegate {
-    // 在调用 super 之前处理，这样 UIScrollView 可以获取到最新的 imp
-    Class const aClass = [delegate class];
-    [_context willSetDelegateOfClass:aClass];
-    
-    // kvo of delegate
-    id const old = super.delegate;
-    [super setDelegate:delegate];
-    id const new = super.delegate;
-    
-    // no changes
-    if (old == new) {
+    id<XZPageViewDelegate> const newValue = delegate;
+    id<XZPageViewDelegate> const oldValue = (id)super.delegate;
+    if (oldValue == newValue) {
         return;
     }
-    
-    // keep self as delegate
-    if (new == nil) {
-        return [super setDelegate:self];
-    }
-    
-    // cache the method imp for opt
-    _didShowPage = nil;
-    _didTurnPage = nil;
-    if ([delegate conformsToProtocol:@protocol(XZPageViewDelegate)]) {
-        [_context notifyDidShowPage:aClass];
-        [_context notifyDidTurnPage:aClass];
+
+    if (newValue) {
+        [_context handleDelegateOfClass:[newValue class]];
+        [super setDelegate:newValue];
+    } else {
+        [super setDelegate:_context];
     }
 }
 
@@ -208,61 +215,6 @@
     
     // 重启自动翻页计时器
     [_context scheduleAutoPagingTimerIfNeeded];
-}
-
-#pragma mark - UIScrollViewDelegate
-
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    if (scrollView != self) {
-        return;
-    }
-    [_context didScroll:NO];
-}
-
-- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
-    if (scrollView != self) {
-        return;
-    }
-    
-    if (_numberOfPages <= 1) {
-        return;
-    }
-    
-    // 用户操作，暂停计时器
-    [_context freezeAutoPagingTimer];
-}
-
-- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
-    if (scrollView != self) {
-        return;
-    }
-    
-    // 用户停止操作，恢复计时器
-    if (_numberOfPages > 1) {
-        [_context resumeAutoPagingTimer];
-    }
-    
-    // 检查翻页：用户停止操作
-    if (decelerate) {
-        return; // 进入减速状态，在减速停止后再决定
-    }
-    
-    // 直接停止滚动了。
-    [_context didScroll:YES];
-}
-
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    if (scrollView != self) {
-        return;
-    }
-    [_context didScroll:YES];
-}
-
-- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
-    if (scrollView != self) {
-        return;
-    }
-    [_context didScroll:YES];
 }
 
 @end

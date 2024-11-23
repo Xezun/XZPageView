@@ -34,7 +34,11 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 #define XZExchangeValue(var_1, var_2)   { typeof(var_1) temp = var_1; var_1 = var_2; var_2 = temp; }
 #define XZCallBlock(block, ...)         if (block != nil) { block(__VA_ARGS__); }
 
-@interface XZPageViewContext : NSObject {
+/// 由于属性 isDragging/isDecelerating 的更新在 contentOffset/bounds.origin 更新之后，
+/// 所以在无法判断 contentOffset/bounds.origin 变化时的滚动状态，继而无法判断翻页状态。
+/// 因此 XZPageView 监听了代理方法来解决相关问题：
+/// 默认 delegate 会被设置为自身；如果外部设置代理，则会通过运行时，向目标注入处理事件的逻辑。
+@interface XZPageViewContext : NSObject <UIScrollViewDelegate> {
     @package
     XZPageView * __unsafe_unretained _pageView;
 }
@@ -45,9 +49,6 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 @property (nonatomic, readonly) XZPageViewOrientation orientation;
 
 // 以下方法作为 XZPageView 的私有方法，子类不应重写它们。
-
-/// 辅助 XZPageView 初始化，仅在初始化方法中才可以调用。
-- (instancetype)didInitialize;
 
 - (void)layoutSubviews:(CGRect const)bounds;
 - (void)reloadCurrentPageView:(CGRect const)bounds;
@@ -64,9 +65,8 @@ UIKIT_STATIC_INLINE BOOL XZScrollDirection(NSInteger from, NSInteger to, NSInteg
 /// 重置自动翻页计时器。
 - (void)resumeAutoPagingTimer;
 
-- (void)willSetDelegateOfClass:(nullable Class)aClass;
-- (void)notifyDidTurnPage:(nonnull Class)aClass;
-- (void)notifyDidShowPage:(nonnull Class)aClass;
+/// 处理 aClass 使之可以作为代理对象。
+- (void)handleDelegateOfClass:(nonnull Class)aClass;
 
 // 子类需要重写的方法。
 
