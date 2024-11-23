@@ -1,5 +1,5 @@
 //
-//  XZPageViewInternal.h
+//  XZPageViewExtension.h
 //  XZPageView
 //
 //  Created by 徐臻 on 2024/9/25.
@@ -35,3 +35,4 @@
 }
 
 @end
+

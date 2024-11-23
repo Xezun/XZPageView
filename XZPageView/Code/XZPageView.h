@@ -11,7 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// 翻页视图：支持多视图横向滚动翻页的视图。
-@interface XZPageView : UIScrollView <UIScrollViewDelegate>
+@interface XZPageView : UIScrollView
 
 /// 指定初始化构造方法。
 /// - Parameters:
@@ -74,18 +74,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// @discussion
 /// 自动翻页计时会重置。
 - (void)reloadData;
-
-// MARK: - UIScrollViewDelegate
-
-// 由于属性 isDragging/isDecelerating 的更新在 contentOffset/bounds.origin 更新之后，
-// 所以在无法判断 contentOffset/bounds.origin 变化时的滚动状态，继而无法判断翻页状态。
-// 因此 XZPageView 监听了代理方法来解决相关问题：
-// 默认 delegate 会被设置为自身；如果外部设置代理，则会通过运行时，向目标注入处理事件的逻辑。
-
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
-- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
-- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate NS_REQUIRES_SUPER;
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView NS_REQUIRES_SUPER;
 
 @end
 
